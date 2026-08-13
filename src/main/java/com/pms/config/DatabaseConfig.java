@@ -297,7 +297,7 @@ public class DatabaseConfig {
                 phone       TEXT,
                 email       TEXT,
                 address     TEXT,
-                notes       TEXT,
+                active      INTEGER NOT NULL DEFAULT 1,
                 created_at  TEXT NOT NULL,
                 updated_at  TEXT NOT NULL,
                 synced      INTEGER NOT NULL DEFAULT 0
@@ -334,7 +334,8 @@ public class DatabaseConfig {
             { "users", "ALTER TABLE users ADD COLUMN last_password_change TEXT NOT NULL DEFAULT (datetime('now'))" },
             { "users", "ALTER TABLE users ADD COLUMN prev_password_hash TEXT" },
             { "sales", "ALTER TABLE sales ADD COLUMN payment_ref TEXT" },
-            { "sales", "ALTER TABLE sales ADD COLUMN customer_id TEXT" }
+            { "sales", "ALTER TABLE sales ADD COLUMN customer_id TEXT" },
+            { "customers", "ALTER TABLE customers ADD COLUMN active INTEGER NOT NULL DEFAULT 1" }
         };
 
         try (Statement stmt = localConnection.createStatement()) {
@@ -491,19 +492,7 @@ public class DatabaseConfig {
                 synced      TINYINT NOT NULL DEFAULT 0
             )
             """,
-            """
-            CREATE TABLE IF NOT EXISTS customers (
-                id          VARCHAR(36) PRIMARY KEY,
-                name        VARCHAR(255) NOT NULL,
-                phone       VARCHAR(50),
-                email       VARCHAR(150),
-                address     TEXT,
-                notes       TEXT,
-                created_at  VARCHAR(30) NOT NULL,
-                updated_at  VARCHAR(30) NOT NULL,
-                synced      TINYINT NOT NULL DEFAULT 0
-            )
-            """,
+
             "CREATE TABLE IF NOT EXISTS sync_log (" +
             "  id          BIGINT PRIMARY KEY " + autoIncrement(dbType) + "," +
             "  table_name  VARCHAR(100) NOT NULL," +

@@ -184,6 +184,9 @@ public class SalesController {
             new Label("Customer: " + (sale.getCustomerName() != null ? sale.getCustomerName() : "Walk-in")),
             new Label("Method: " + sale.getPaymentMethod())
         );
+        if (sale.getPaymentRef() != null && !sale.getPaymentRef().isEmpty()) {
+            headerBox.getChildren().add(new Label("Reference: " + sale.getPaymentRef()));
+        }
 
         TableView<SaleItem> itemsTable = new TableView<>();
         itemsTable.setPrefHeight(200);
@@ -207,13 +210,30 @@ public class SalesController {
             }
         }).start();
 
-        HBox totalBox = new HBox();
-        totalBox.setAlignment(Pos.CENTER_RIGHT);
-        Label totalLabel = new Label("Total: " + CurrencyUtil.format(sale.getNetTotal()));
-        totalLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #18181b;");
-        totalBox.getChildren().add(totalLabel);
+        VBox summaryBox = new VBox(5);
+        summaryBox.setAlignment(Pos.CENTER_RIGHT);
+        
+        Label subtotalLabel = new Label("Subtotal: " + CurrencyUtil.format(sale.getTotalAmount()));
+        subtotalLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #4b5563;");
+        summaryBox.getChildren().add(subtotalLabel);
 
-        content.getChildren().addAll(headerBox, itemsTable, totalBox);
+        if (sale.getDiscount() > 0) {
+            Label discountLabel = new Label("Discount: -" + CurrencyUtil.format(sale.getDiscount()));
+            discountLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #ef4444;");
+            summaryBox.getChildren().add(discountLabel);
+        }
+
+        if (sale.getTax() > 0) {
+            Label taxLabel = new Label("Tax: " + CurrencyUtil.format(sale.getTax()));
+            taxLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #4b5563;");
+            summaryBox.getChildren().add(taxLabel);
+        }
+
+        Label totalLabel = new Label("Net Total: " + CurrencyUtil.format(sale.getNetTotal()));
+        totalLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #18181b; -fx-padding: 5 0 0 0;");
+        summaryBox.getChildren().add(totalLabel);
+
+        content.getChildren().addAll(headerBox, itemsTable, summaryBox);
         dialog.getDialogPane().setContent(content);
         dialog.showAndWait();
     }

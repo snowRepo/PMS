@@ -20,6 +20,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.layout.GridPane;
 import javafx.geometry.Pos;
 
 import java.util.Optional;
@@ -32,7 +33,11 @@ public class PosController {
     @FXML private FlowPane productsFlowPane;
 
     // Right Panel - Customer & Cart
-    @FXML private ComboBox<Customer> customerCombo;
+    @FXML private TextField customerSearchField;
+    private Customer selectedCustomer;
+    private ContextMenu autocompleteMenu = new ContextMenu();
+    private List<Customer> allActiveCustomers;
+
     @FXML private TableView<SaleItem> cartTable;
     @FXML private TableColumn<SaleItem, String> colCartName;
     @FXML private TableColumn<SaleItem, Integer> colCartQty;
@@ -42,6 +47,7 @@ public class PosController {
 
     // Checkout Details
     @FXML private TextField cartDiscountField;
+    @FXML private TextField cartTaxField;
     @FXML private Label netTotalLabel;
     @FXML private ComboBox<String> paymentMethodCombo;
     @FXML private Label refLabel;
@@ -68,6 +74,7 @@ public class PosController {
 
         cartList.addListener((javafx.collections.ListChangeListener.Change<? extends SaleItem> c) -> updateTotals());
         cartDiscountField.textProperty().addListener((obs, oldV, newV) -> updateTotals());
+        cartTaxField.textProperty().addListener((obs, oldV, newV) -> updateTotals());
         amountTenderedField.textProperty().addListener((obs, oldV, newV) -> updateTotals());
         
         paymentMethodCombo.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> {
@@ -82,14 +89,29 @@ public class PosController {
     private void renderProductCards(List<Product> products) {
         productsFlowPane.getChildren().clear();
         for (Product p : products) {
+            boolean isExpired = false;
+            if (p.getExpiryDate() != null && !p.getExpiryDate().isEmpty()) {
+                try {
+                    java.time.LocalDate expDate = java.time.LocalDate.parse(p.getExpiryDate());
+                    if (expDate.isBefore(java.time.LocalDate.now())) {
+                        isExpired = true;
+                    }
+                } catch (Exception ex) {
+                    // Ignore parsing errors
+                }
+            }
+
             VBox card = new VBox(4);
             card.setAlignment(Pos.CENTER);
             card.setPrefSize(120, 100);
-            card.setStyle("-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: #e4e4e7; -fx-border-radius: 8; -fx-cursor: hand;");
             
-            // Hover effect
-            card.setOnMouseEntered(e -> card.setStyle("-fx-background-color: #f4f4f5; -fx-background-radius: 8; -fx-border-color: #039ED3; -fx-border-radius: 8; -fx-cursor: hand;"));
-            card.setOnMouseExited(e -> card.setStyle("-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: #e4e4e7; -fx-border-radius: 8; -fx-cursor: hand;"));
+            if (isExpired) {
+                card.setStyle("-fx-background-color: #fef2f2; -fx-background-radius: 8; -fx-border-color: #ef4444; -fx-border-radius: 8; -fx-cursor: hand;");
+            } else {
+                card.setStyle("-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: #e4e4e7; -fx-border-radius: 8; -fx-cursor: hand;");
+                card.setOnMouseEntered(e -> card.setStyle("-fx-background-color: #f4f4f5; -fx-background-radius: 8; -fx-border-color: #039ED3; -fx-border-radius: 8; -fx-cursor: hand;"));
+                card.setOnMouseExited(e -> card.setStyle("-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: #e4e4e7; -fx-border-radius: 8; -fx-cursor: hand;"));
+            }
 
             Label nameLbl = new Label(p.getName());
             nameLbl.setStyle("-fx-font-weight: bold; -fx-text-fill: #18181b;");
@@ -104,8 +126,19 @@ public class PosController {
             stockLbl.setStyle("-fx-font-size: 10px; -fx-text-fill: #71717a;");
 
             card.getChildren().addAll(nameLbl, priceLbl, stockLbl);
+            
+            if (isExpired) {
+                Label expiredLbl = new Label("EXPIRED");
+                expiredLbl.setStyle("-fx-font-size: 10px; -fx-text-fill: white; -fx-background-color: #ef4444; -fx-padding: 2 6; -fx-background-radius: 4;");
+                card.getChildren().add(expiredLbl);
+            }
 
+            final boolean expiredFinal = isExpired;
             card.setOnMouseClicked(e -> {
+                if (expiredFinal) {
+                    Notifier.error("Product has expired and cannot be sold.");
+                    return;
+                }
                 if (p.getStockQty() <= 0) {
                     Notifier.error("Product is out of stock!");
                     return;
@@ -133,7 +166,45 @@ public class PosController {
 
     private void loadCustomers() {
         try {
-            customerCombo.getItems().setAll(customerDAO.findAllActive());
+            allActiveCustomers = customerDAO.findAllActive();
+            
+            customerSearchField.textProperty().addListener((obs, oldV, newV) -> {
+                if (selectedCustomer != null && !selectedCustomer.toString().equals(newV)) {
+                    selectedCustomer = null;
+                }
+                
+                if (newV == null || newV.trim().isEmpty()) {
+                    autocompleteMenu.hide();
+                    return;
+                }
+                
+                if (selectedCustomer != null && selectedCustomer.toString().equals(newV)) {
+                    return; // user just selected from menu
+                }
+
+                String query = newV.toLowerCase();
+                List<Customer> filtered = allActiveCustomers.stream()
+                        .filter(c -> c.getName().toLowerCase().contains(query) || (c.getPhone() != null && c.getPhone().toLowerCase().contains(query)))
+                        .toList();
+                
+                if (filtered.isEmpty()) {
+                    autocompleteMenu.hide();
+                } else {
+                    autocompleteMenu.getItems().clear();
+                    for (Customer c : filtered) {
+                        MenuItem item = new MenuItem(c.toString());
+                        item.setOnAction(e -> {
+                            selectedCustomer = c;
+                            customerSearchField.setText(c.toString());
+                            autocompleteMenu.hide();
+                        });
+                        autocompleteMenu.getItems().add(item);
+                    }
+                    if (!autocompleteMenu.isShowing()) {
+                        autocompleteMenu.show(customerSearchField, javafx.geometry.Side.BOTTOM, 0, 0);
+                    }
+                }
+            });
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -180,9 +251,11 @@ public class PosController {
     @FXML
     public void handleRemoveItem() {
         SaleItem selected = cartTable.getSelectionModel().getSelectedItem();
-        if (selected != null) {
-            cartList.remove(selected);
+        if (selected == null) {
+            Notifier.error("Select an item to remove.");
+            return;
         }
+        cartList.remove(selected);
     }
 
     @FXML
@@ -202,7 +275,7 @@ public class PosController {
         TextInputDialog dialog = new TextInputDialog(String.valueOf(selected.getDiscount()));
         dialog.setTitle("Item Discount");
         dialog.setHeaderText("Enter discount for " + selected.getProductName());
-        dialog.setContentText("Discount Amount (" + CurrencyUtil.getSymbol() + "):");
+        dialog.setContentText("Discount Amount (" + CurrencyUtil.getSymbol() + " or %):");
         
         // Attach to main window to prevent full-screen takeover issues on macOS
         if (cartTable.getScene() != null && cartTable.getScene().getWindow() != null) {
@@ -212,7 +285,7 @@ public class PosController {
         Optional<String> result = dialog.showAndWait();
         result.ifPresent(val -> {
             try {
-                double disc = Double.parseDouble(val);
+                double disc = parseDiscount(val, selected.getUnitPrice());
                 if (disc < 0) throw new NumberFormatException();
                 if (disc > selected.getUnitPrice()) {
                     Notifier.error("Discount cannot exceed item price.");
@@ -230,27 +303,67 @@ public class PosController {
 
     @FXML
     public void handleNewCustomer() {
-        TextInputDialog dialog = new TextInputDialog();
+        Dialog<Customer> dialog = new Dialog<>();
         dialog.setTitle("New Customer");
-        dialog.setHeaderText("Quick Add Customer");
-        dialog.setContentText("Customer Name:");
+        dialog.setHeaderText("Add Customer Details");
 
         if (cartTable.getScene() != null && cartTable.getScene().getWindow() != null) {
             dialog.initOwner(cartTable.getScene().getWindow());
         }
 
-        Optional<String> result = dialog.showAndWait();
-        result.ifPresent(name -> {
-            if (name.trim().isEmpty()) return;
-            try {
+        ButtonType saveBtnType = new ButtonType("Save", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(saveBtnType, ButtonType.CANCEL);
+
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new javafx.geometry.Insets(20, 150, 10, 10));
+
+        TextField nameField = new TextField();
+        nameField.setPromptText("Customer Name");
+        TextField phoneField = new TextField();
+        phoneField.setPromptText("Phone Number");
+        TextField emailField = new TextField();
+        emailField.setPromptText("Email Address");
+        TextField addressField = new TextField();
+        addressField.setPromptText("Address");
+
+        grid.add(new Label("Name:"), 0, 0);
+        grid.add(nameField, 1, 0);
+        grid.add(new Label("Phone:"), 0, 1);
+        grid.add(phoneField, 1, 1);
+        grid.add(new Label("Email:"), 0, 2);
+        grid.add(emailField, 1, 2);
+        grid.add(new Label("Address:"), 0, 3);
+        grid.add(addressField, 1, 3);
+
+        dialog.getDialogPane().setContent(grid);
+        javafx.application.Platform.runLater(nameField::requestFocus);
+
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == saveBtnType) {
+                if (nameField.getText().trim().isEmpty()) {
+                    Notifier.error("Customer name cannot be empty.");
+                    return null;
+                }
                 Customer c = new Customer();
-                c.setName(name.trim());
-                c.setPhone("");
-                c.setEmail("");
-                c.setAddress("");
+                c.setName(nameField.getText().trim());
+                c.setPhone(phoneField.getText().trim());
+                c.setEmail(emailField.getText().trim());
+                c.setAddress(addressField.getText().trim());
+                return c;
+            }
+            return null;
+        });
+
+        Optional<Customer> result = dialog.showAndWait();
+        result.ifPresent(c -> {
+            try {
                 customerDAO.create(c);
+                Notifier.success("Customer added successfully.");
                 loadCustomers();
-                customerCombo.setValue(c); // select it
+                selectedCustomer = c;
+                customerSearchField.setText(c.toString());
             } catch (Exception e) {
                 Notifier.error("Failed to add customer: " + e.getMessage());
             }
@@ -263,8 +376,9 @@ public class PosController {
             subtotal += item.getSubtotal();
         }
 
-        double cartDisc = parseDouble(cartDiscountField.getText());
-        double net = subtotal - cartDisc;
+        double cartDisc = parseDiscount(cartDiscountField.getText(), subtotal);
+        double tax = parseDiscount(cartTaxField.getText(), subtotal - cartDisc);
+        double net = subtotal - cartDisc + tax;
         if (net < 0) net = 0;
 
         netTotalLabel.setText(CurrencyUtil.format(net));
@@ -282,6 +396,20 @@ public class PosController {
         }
     }
 
+    private double parseDiscount(String val, double baseAmount) {
+        if (val == null || val.trim().isEmpty()) return 0;
+        val = val.trim();
+        try {
+            if (val.endsWith("%")) {
+                double pct = Double.parseDouble(val.substring(0, val.length() - 1));
+                return baseAmount * (pct / 100.0);
+            }
+            return Double.parseDouble(val);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
     @FXML
     public void handleCheckout() {
         if (cartList.isEmpty()) {
@@ -290,8 +418,9 @@ public class PosController {
         }
 
         double subtotal = cartList.stream().mapToDouble(SaleItem::getSubtotal).sum();
-        double cartDisc = parseDouble(cartDiscountField.getText());
-        double netTotal = subtotal - cartDisc;
+        double cartDisc = parseDiscount(cartDiscountField.getText(), subtotal);
+        double tax = parseDiscount(cartTaxField.getText(), subtotal - cartDisc);
+        double netTotal = subtotal - cartDisc + tax;
         double tendered = parseDouble(amountTenderedField.getText());
 
         if (tendered == 0) {
@@ -315,17 +444,16 @@ public class PosController {
             sale.setSaleDate(DateTimeUtil.now());
             sale.setTotalAmount(subtotal);
             sale.setDiscount(cartDisc);
-            sale.setTax(0); // Not implemented yet
+            sale.setTax(tax);
             sale.setAmountPaid(tendered);
             sale.setChangeAmount(tendered > netTotal ? tendered - netTotal : 0);
             sale.setPaymentMethod(pm);
             sale.setPaymentRef(ref);
             sale.setCashierId(Session.current().getId());
 
-            Customer cust = customerCombo.getValue();
-            if (cust != null) {
-                sale.setCustomerId(cust.getId());
-                sale.setCustomerName(cust.getName());
+            if (selectedCustomer != null) {
+                sale.setCustomerId(selectedCustomer.getId());
+                sale.setCustomerName(selectedCustomer.getName());
             }
 
             sale.setItems(cartList);
@@ -341,9 +469,11 @@ public class PosController {
             // Reset UI
             cartList.clear();
             cartDiscountField.setText("0.00");
+            cartTaxField.setText("0.00");
             amountTenderedField.setText("0.00");
             refField.clear();
-            customerCombo.getSelectionModel().clearSelection();
+            customerSearchField.clear();
+            selectedCustomer = null;
             loadProducts(""); // Refresh stock
             
         } catch (Exception e) {
@@ -353,43 +483,9 @@ public class PosController {
     }
 
     private void printReceipt(Sale sale) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("====================================\n");
-        sb.append("          SALES RECEIPT\n");
-        sb.append("====================================\n");
-        sb.append("Receipt No: ").append(sale.getId().substring(0,8).toUpperCase()).append("\n");
-        sb.append("Date: ").append(sale.getSaleDate()).append("\n");
-        if (sale.getCustomerName() != null) {
-            sb.append("Customer: ").append(sale.getCustomerName()).append("\n");
-        }
-        sb.append("------------------------------------\n");
-        sb.append(String.format("%-20s %-5s %s\n", "Item", "Qty", "Total"));
-        sb.append("------------------------------------\n");
-        
-        for (SaleItem item : sale.getItems()) {
-            String name = item.getProductName();
-            if (name.length() > 18) name = name.substring(0, 18) + "..";
-            sb.append(String.format("%-20s %-5d %s\n", name, item.getQty(), CurrencyUtil.format(item.getSubtotal())));
-        }
-        
-        sb.append("------------------------------------\n");
-        sb.append(String.format("%-26s %s\n", "Subtotal:", CurrencyUtil.format(sale.getTotalAmount())));
-        if (sale.getDiscount() > 0) {
-            sb.append(String.format("%-26s %s\n", "Cart Discount:", "-" + CurrencyUtil.format(sale.getDiscount())));
-        }
-        sb.append(String.format("%-26s %s\n", "NET TOTAL:", CurrencyUtil.format(sale.getNetTotal())));
-        sb.append("------------------------------------\n");
-        sb.append(String.format("%-26s %s\n", "Amount Tendered:", CurrencyUtil.format(sale.getAmountPaid())));
-        sb.append(String.format("%-26s %s\n", "Change:", CurrencyUtil.format(sale.getChangeAmount())));
-        sb.append("Payment: ").append(sale.getPaymentMethod());
-        if (sale.getPaymentRef() != null && !sale.getPaymentRef().isEmpty()) {
-            sb.append(" (Ref: ").append(sale.getPaymentRef()).append(")");
-        }
-        sb.append("\n====================================\n");
-        sb.append("       THANK YOU FOR SHOPPING!\n");
-        sb.append("====================================\n");
+        String receiptText = com.pms.util.ReceiptPdfGenerator.generateReceiptText(sale);
 
-        TextArea textArea = new TextArea(sb.toString());
+        TextArea textArea = new TextArea(receiptText);
         textArea.setEditable(false);
         textArea.setStyle("-fx-font-family: monospace;");
         textArea.setPrefRowCount(25);
@@ -407,7 +503,7 @@ public class PosController {
         alert.showAndWait().ifPresent(type -> {
             if (type == printBtn) {
                 // In a real app we'd use PrinterJob here
-                Notifier.info("Receipt sent to printer!");
+                Notifier.success("Printing receipt...");
             }
         });
     }

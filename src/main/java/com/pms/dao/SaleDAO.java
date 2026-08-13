@@ -105,6 +105,22 @@ public class SaleDAO {
         }
     }
 
+    public List<Sale> findByCustomer(String customerId) throws SQLException {
+        List<Sale> list = new ArrayList<>();
+        try (PreparedStatement ps = conn().prepareStatement(
+                "SELECT * FROM sales WHERE customer_id = ? ORDER BY sale_date DESC")) {
+            ps.setString(1, customerId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Sale sale = mapHeader(rs);
+                    sale.setItems(findItemsBySaleId(sale.getId()));
+                    list.add(sale);
+                }
+            }
+        }
+        return list;
+    }
+
     /** Returns the sum of all sales revenue. */
     public double getTotalRevenue() throws SQLException {
         String sql = "SELECT SUM(total_amount) FROM sales";
