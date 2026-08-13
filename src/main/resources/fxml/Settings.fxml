@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.pms.controller.SettingsController"
+            style="-fx-background-color: #f0f0f2;">
+
+    <top>
+        <VBox style="-fx-padding: 30 20 10 20;" spacing="8">
+            <Label text="Global Settings" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #18181b;"/>
+            <Label text="Configure system-wide preferences." style="-fx-text-fill: #71717a;"/>
+        </VBox>
+    </top>
+
+    <center>
+        <VBox style="-fx-padding: 20;" spacing="20">
+            
+            <VBox spacing="10" style="-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: #d4d4d8; -fx-border-radius: 8; -fx-padding: 20;" maxWidth="500">
+                <Label text="Localization" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #18181b;"/>
+                <Separator/>
+                
+                <VBox spacing="4">
+                    <Label text="Currency Symbol"/>
+                    <ComboBox fx:id="currencyCombo" promptText="Select Currency" maxWidth="Infinity"/>
+                </VBox>
+                
+                <HBox alignment="CENTER_RIGHT" style="-fx-padding: 10 0 0 0;">
+                    <Button text="Save Preferences" onAction="#handleSave" defaultButton="true"/>
+                </HBox>
+            </VBox>
+
+        </VBox>
+    </center>
+</BorderPane>

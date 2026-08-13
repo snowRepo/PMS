@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<BorderPane fx:id="rootPane" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.pms.controller.DashboardController">
+
+    <!-- SIDEBAR -->
+    <left>
+        <VBox styleClass="sidebar" prefWidth="240" spacing="16">
+            <!-- Logo / Branding -->
+            <VBox alignment="CENTER" spacing="4">
+                <Label text="PMS" style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #039ED3;"/>
+                <Label text="Product Management System" style="-fx-font-size: 11px; -fx-text-fill: #71717a;"/>
+            </VBox>
+            
+            <Separator style="-fx-opacity: 0.2;"/>
+
+            <!-- Navigation Links -->
+            <VBox spacing="8" VBox.vgrow="ALWAYS">
+                <Button text="🏠 Dashboard" onAction="#openDashboard" maxWidth="Infinity" alignment="BASELINE_LEFT"/>
+                <Button text="📦 Inventory" onAction="#openInventory" maxWidth="Infinity" alignment="BASELINE_LEFT"/>
+                <Button text="🏷 Categories" onAction="#openCategories" maxWidth="Infinity" alignment="BASELINE_LEFT"/>
+                <Button text="🛒 Sales (POS)" onAction="#openPos" maxWidth="Infinity" alignment="BASELINE_LEFT"/>
+                <Button text="📜 Sales History" onAction="#openSalesHistory" maxWidth="Infinity" alignment="BASELINE_LEFT"/>
+                <Button text="🚚 Purchases" onAction="#openPurchases" maxWidth="Infinity" alignment="BASELINE_LEFT"/>
+                <Button text="👥 Customers" onAction="#openCustomers" maxWidth="Infinity" alignment="BASELINE_LEFT"/>
+                <Button text="📊 Reports" onAction="#openReports" maxWidth="Infinity" alignment="BASELINE_LEFT"/>
+                
+                <Region VBox.vgrow="ALWAYS"/>
+                
+                <Button text="⚙ Settings" onAction="#openSettings" maxWidth="Infinity" alignment="BASELINE_LEFT"/>
+            </VBox>
+
+            <Separator style="-fx-opacity: 0.2;"/>
+
+            <!-- User Info & Sync Status -->
+            <VBox spacing="8">
+                <VBox spacing="2">
+                    <Label fx:id="userLabel" text="User Name" style="-fx-text-fill: #18181b; -fx-font-weight: bold; -fx-font-size: 13px;"/>
+                    <Label fx:id="roleLabel" text="ROLE" style="-fx-text-fill: #039ED3; -fx-font-size: 11px; -fx-font-weight: bold;"/>
+                </VBox>
+                <Label fx:id="syncStatusLabel" text="● Offline" style="-fx-text-fill: #71717a; -fx-font-size: 11px;"/>
+                
+                <HBox spacing="8">
+                    <Button text="Sync Now" onAction="#handleSync" HBox.hgrow="ALWAYS" maxWidth="Infinity" style="-fx-font-size: 11px;"/>
+                    <Button text="Logout" onAction="#handleLogout" HBox.hgrow="ALWAYS" maxWidth="Infinity" style="-fx-font-size: 11px; -fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-weight: bold;"/>
+                </HBox>
+            </VBox>
+        </VBox>
+    </left>
+
+    <!-- MAIN CONTENT AREA -->
+    <center>
+        <StackPane fx:id="contentPane" style="-fx-background-color: #f0f0f2;"/>
+    </center>
+
+</BorderPane>

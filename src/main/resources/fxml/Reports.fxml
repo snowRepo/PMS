@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17"
+      xmlns:fx="http://javafx.com/fxml/1"
+      alignment="CENTER"
+      spacing="16">
+
+    <Label text="Reports" style="-fx-font-size: 24; -fx-font-weight: bold;"/>
+    <Label text="Module coming soon." style="-fx-text-fill: gray;"/>
+</VBox>

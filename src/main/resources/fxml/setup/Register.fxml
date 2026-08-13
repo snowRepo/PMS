@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.pms.controller.setup.RegisterController"
+            prefWidth="600" prefHeight="500">
+
+    <center>
+        <VBox alignment="TOP_CENTER" spacing="32" style="-fx-padding: 30 0 0 0;" BorderPane.alignment="TOP_CENTER">
+            <VBox alignment="CENTER" spacing="8">
+                <Label text="PMS Setup"/>
+                <Label text="Step 2 of 3 — Create Admin Account"/>
+            </VBox>
+
+            <VBox spacing="12" maxWidth="400">
+                <VBox spacing="4">
+                    <Label text="Full Name:"/>
+                    <TextField fx:id="fullNameField" promptText="e.g. John Doe"/>
+                </VBox>
+
+                <VBox spacing="4">
+                    <Label text="Username:"/>
+                    <TextField fx:id="usernameField" promptText="No spaces"/>
+                </VBox>
+
+                <VBox spacing="4">
+                    <Label text="Password:"/>
+                    <PasswordField fx:id="passwordField" promptText="Min 8 characters"/>
+                </VBox>
+
+                <VBox spacing="4">
+                    <Label text="Confirm Password:"/>
+                    <PasswordField fx:id="confirmField" promptText="Re-enter password"/>
+                </VBox>
+
+                <Label fx:id="errorLabel" wrapText="true" managed="false" visible="false"/>
+
+                <HBox spacing="10">
+                    <Button text="← Back" onAction="#handleBack" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                    <Button text="Continue →" onAction="#handleContinue" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                </HBox>
+            </VBox>
+        </VBox>
+    </center>
+
+    <bottom>
+        <Label text="© 2026 PMS - All Rights Reserved" maxWidth="Infinity" alignment="CENTER" style="-fx-padding: 24;"/>
+    </bottom>
+</BorderPane>
