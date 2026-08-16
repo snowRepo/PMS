@@ -97,7 +97,7 @@ public class InventoryController {
                     if (med.isLowStock()) {
                         badge.setStyle(badge.getStyle() + "-fx-background-color: #fee2e2; -fx-text-fill: #ef4444;"); // Red warning
                     } else {
-                        badge.setStyle(badge.getStyle() + "-fx-background-color: #dcfce7; -fx-text-fill: #22c55e;"); // Green success
+                        badge.setStyle(badge.getStyle() + "-fx-background-color: #d1fae5; -fx-text-fill: #065f46;"); // Deep green
                     }
                     
                     StackPane wrapper = new StackPane(badge);
@@ -235,11 +235,14 @@ public class InventoryController {
         } catch (Exception e) {
             logger.error("Failed to open Product Form", e);
             Notifier.error("Failed to open form.");
+        } finally {
+            Platform.runLater(inventoryTable::requestFocus);
         }
     }
 
     private void handleDelete(Product med) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.initOwner(com.pms.util.Navigator.getStage());
         alert.initOwner(inventoryTable.getScene().getWindow());
         alert.setTitle("Delete Item");
         alert.setHeaderText("Delete " + med.getName() + "?");
@@ -252,9 +255,9 @@ public class InventoryController {
                     // Soft delete: set active = false (0)
                     // TODO: add softDelete method to ProductDAO if it doesn't exist, or just use update
                     med.setActive(false);
-                    // productDAO.update(med); 
                     // Wait, let's implement softDelete in ProductDAO to be safe and clean.
                     productDAO.delete(med.getId());
+                    com.pms.dao.ActivityLogDAO.log("PRODUCT_DELETED", "Product deleted: " + med.getName());
                     Notifier.success("Item deleted.");
                     refreshData();
                 } catch (Exception e) {
@@ -263,5 +266,6 @@ public class InventoryController {
                 }
             }
         });
+        Platform.runLater(inventoryTable::requestFocus);
     }
 }

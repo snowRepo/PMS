@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Pos?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.pms.controller.auth.ChangePinModalController"
+            prefWidth="400" prefHeight="480" style="-fx-background-color: white;">
+
+    <top>
+        <VBox alignment="CENTER" spacing="10" style="-fx-padding: 20 20 10 20;">
+            <Label text="Change Security PIN" style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+            <Label text="Enter your current PIN to authorize this change." style="-fx-text-fill: #71717a;"/>
+        </VBox>
+    </top>
+
+    <center>
+        <VBox alignment="TOP_CENTER" spacing="24" style="-fx-padding: 20;">
+            
+            <VBox spacing="8" alignment="CENTER">
+                <Label text="CURRENT PIN" style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #52525b;"/>
+                <HBox fx:id="currentPinRow" spacing="8" alignment="CENTER"/>
+            </VBox>
+            
+            <Separator maxWidth="300"/>
+
+            <VBox spacing="8" alignment="CENTER">
+                <Label text="NEW PIN" style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #52525b;"/>
+                <HBox fx:id="newPinRow" spacing="8" alignment="CENTER"/>
+            </VBox>
+
+            <VBox spacing="8" alignment="CENTER">
+                <Label text="CONFIRM NEW PIN" style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #52525b;"/>
+                <HBox fx:id="confirmPinRow" spacing="8" alignment="CENTER"/>
+            </VBox>
+
+            <Label fx:id="errorLabel" textFill="#ef4444" wrapText="true" managed="false" visible="false"/>
+
+        </VBox>
+    </center>
+
+    <bottom>
+        <HBox spacing="10" alignment="CENTER" style="-fx-padding: 20;">
+            <Button text="Cancel" onAction="#handleCancel" prefWidth="100"/>
+            <Button text="Change PIN" onAction="#handleSave" defaultButton="true" prefWidth="120" />
+        </HBox>
+    </bottom>
+</BorderPane>

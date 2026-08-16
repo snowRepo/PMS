@@ -70,6 +70,15 @@ public class SaleDAO {
             }
 
             conn().commit();
+            
+            // Add sale to active shift
+            try {
+                new ShiftDAO().addSaleToShift(sale.getCashierId(), sale.getAmountPaid() - sale.getChangeAmount(), sale.getPaymentMethod());
+            } catch (SQLException ex) {
+                logger.error("Failed to add sale to active shift: " + ex.getMessage(), ex);
+                // Non-fatal, transaction is already committed
+            }
+            
             logSync("sales", sale.getId(), "INSERT");
             return sale;
 
@@ -123,7 +132,7 @@ public class SaleDAO {
 
     /** Returns the sum of all sales revenue. */
     public double getTotalRevenue() throws SQLException {
-        String sql = "SELECT SUM(total_amount) FROM sales";
+        String sql = "SELECT SUM(amount_paid - change_amount) FROM sales";
         try (PreparedStatement ps = conn().prepareStatement(sql)) {
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -140,13 +149,37 @@ public class SaleDAO {
         // We match sale_date >= start of today.
         // Or simply matching sale_date starting with today's date (YYYY-MM-DD)
         String today = DateTimeUtil.now().substring(0, 10);
-        String sql = "SELECT SUM(total_amount) FROM sales WHERE sale_date LIKE ?";
+        String sql = "SELECT SUM(amount_paid - change_amount) FROM sales WHERE sale_date LIKE ?";
         try (PreparedStatement ps = conn().prepareStatement(sql)) {
             ps.setString(1, today + "%");
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return rs.getDouble(1);
                 }
+            }
+        }
+        return 0.0;
+    }
+
+    public double getTotalRevenueByCashier(String cashierId) throws SQLException {
+        String sql = "SELECT SUM(amount_paid - change_amount) FROM sales WHERE cashier_id = ?";
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setString(1, cashierId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getDouble(1);
+            }
+        }
+        return 0.0;
+    }
+
+    public double getTodayRevenueByCashier(String cashierId) throws SQLException {
+        String today = DateTimeUtil.now().substring(0, 10);
+        String sql = "SELECT SUM(amount_paid - change_amount) FROM sales WHERE cashier_id = ? AND sale_date LIKE ?";
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setString(1, cashierId);
+            ps.setString(2, today + "%");
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getDouble(1);
             }
         }
         return 0.0;

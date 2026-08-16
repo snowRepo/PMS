@@ -11,7 +11,7 @@ import java.sql.*;
 /**
  * Manages local SQLite and remote (PostgreSQL / MySQL / MariaDB) connections.
  *
- *  Local  → SQLite at database/pharmsys_local.db  (always available)
+ *  Local  → SQLite at database/pms_local.db  (always available)
  *  Remote → Connection pool built from credentials stored in app_prefs
  */
 public class DatabaseConfig {
@@ -279,13 +279,13 @@ public class DatabaseConfig {
             CREATE TABLE IF NOT EXISTS purchase_items (
                 id          TEXT PRIMARY KEY,
                 purchase_id TEXT NOT NULL,
-                medicine_id TEXT NOT NULL,
+                product_id  TEXT NOT NULL,
                 qty         INTEGER NOT NULL,
                 unit_cost   REAL NOT NULL,
                 subtotal    REAL NOT NULL,
                 synced      INTEGER NOT NULL DEFAULT 0,
                 FOREIGN KEY (purchase_id) REFERENCES purchases(id),
-                FOREIGN KEY (medicine_id) REFERENCES medicines(id)
+                FOREIGN KEY (product_id) REFERENCES products(id)
             )
             """,
 
@@ -304,6 +304,28 @@ public class DatabaseConfig {
             )
             """,
 
+            // Shifts
+            """
+            CREATE TABLE IF NOT EXISTS shifts (
+                id                   TEXT PRIMARY KEY,
+                cashier_id           TEXT NOT NULL,
+                start_time           TEXT NOT NULL,
+                end_time             TEXT,
+                starting_cash        REAL NOT NULL,
+                cash_sales           REAL NOT NULL DEFAULT 0,
+                momo_sales           REAL NOT NULL DEFAULT 0,
+                card_sales           REAL NOT NULL DEFAULT 0,
+                expected_ending_cash REAL,
+                declared_ending_cash REAL,
+                discrepancy          REAL,
+                discrepancy_resolved INTEGER NOT NULL DEFAULT 0,
+                status               TEXT NOT NULL,
+                notes                TEXT,
+                synced               INTEGER NOT NULL DEFAULT 0,
+                FOREIGN KEY(cashier_id) REFERENCES users(id)
+            )
+            """,
+
             // Sync queue
             """
             CREATE TABLE IF NOT EXISTS sync_log (
@@ -311,6 +333,19 @@ public class DatabaseConfig {
                 table_name  TEXT NOT NULL,
                 record_id   TEXT NOT NULL,
                 operation   TEXT NOT NULL,
+                created_at  TEXT NOT NULL,
+                synced      INTEGER NOT NULL DEFAULT 0
+            )
+            """,
+
+            // Activity Logs
+            """
+            CREATE TABLE IF NOT EXISTS activity_logs (
+                id          TEXT PRIMARY KEY,
+                user_id     TEXT,
+                username    TEXT,
+                action      TEXT NOT NULL,
+                description TEXT NOT NULL,
                 created_at  TEXT NOT NULL,
                 synced      INTEGER NOT NULL DEFAULT 0
             )
@@ -335,7 +370,10 @@ public class DatabaseConfig {
             { "users", "ALTER TABLE users ADD COLUMN prev_password_hash TEXT" },
             { "sales", "ALTER TABLE sales ADD COLUMN payment_ref TEXT" },
             { "sales", "ALTER TABLE sales ADD COLUMN customer_id TEXT" },
-            { "customers", "ALTER TABLE customers ADD COLUMN active INTEGER NOT NULL DEFAULT 1" }
+            { "customers", "ALTER TABLE customers ADD COLUMN active INTEGER NOT NULL DEFAULT 1" },
+            { "purchase_items", "ALTER TABLE purchase_items RENAME COLUMN medicine_id TO product_id" },
+            { "shifts", "ALTER TABLE shifts ADD COLUMN discrepancy_resolved INTEGER NOT NULL DEFAULT 0" },
+            // activity_logs is handled by CREATE TABLE IF NOT EXISTS in createLocalSchema()
         };
 
         try (Statement stmt = localConnection.createStatement()) {
@@ -343,7 +381,7 @@ public class DatabaseConfig {
                 try {
                     stmt.execute(m[1]);
                 } catch (SQLException ignored) {
-                    // Column already exists — this is expected for fresh installs
+                    // Column already exists or rename fails - expected for fresh installs/already migrated
                 }
             }
         } catch (SQLException e) {
@@ -485,11 +523,30 @@ public class DatabaseConfig {
             CREATE TABLE IF NOT EXISTS purchase_items (
                 id          VARCHAR(36) PRIMARY KEY,
                 purchase_id VARCHAR(36) NOT NULL,
-                medicine_id VARCHAR(36) NOT NULL,
+                product_id  VARCHAR(36) NOT NULL,
                 qty         INT NOT NULL,
                 unit_cost   DECIMAL(12,2) NOT NULL,
                 subtotal    DECIMAL(12,2) NOT NULL,
                 synced      TINYINT NOT NULL DEFAULT 0
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS shifts (
+                id                   VARCHAR(36) PRIMARY KEY,
+                cashier_id           VARCHAR(36) NOT NULL,
+                start_time           VARCHAR(30) NOT NULL,
+                end_time             VARCHAR(30),
+                starting_cash        DECIMAL(12,2) NOT NULL,
+                cash_sales           DECIMAL(12,2) NOT NULL DEFAULT 0,
+                momo_sales           DECIMAL(12,2) NOT NULL DEFAULT 0,
+                card_sales           DECIMAL(12,2) NOT NULL DEFAULT 0,
+                expected_ending_cash DECIMAL(12,2),
+                declared_ending_cash DECIMAL(12,2),
+                discrepancy          DECIMAL(12,2),
+                discrepancy_resolved TINYINT NOT NULL DEFAULT 0,
+                status               VARCHAR(30) NOT NULL,
+                notes                TEXT,
+                synced               TINYINT NOT NULL DEFAULT 0
             )
             """,
 
@@ -500,7 +557,19 @@ public class DatabaseConfig {
             "  operation   VARCHAR(10) NOT NULL," +
             "  created_at  VARCHAR(30) NOT NULL," +
             "  synced      TINYINT NOT NULL DEFAULT 0" +
-            ")"
+            ")",
+            
+            """
+            CREATE TABLE IF NOT EXISTS activity_logs (
+                id          VARCHAR(36) PRIMARY KEY,
+                user_id     VARCHAR(36),
+                username    VARCHAR(100),
+                action      VARCHAR(50) NOT NULL,
+                description TEXT NOT NULL,
+                created_at  VARCHAR(30) NOT NULL,
+                synced      TINYINT NOT NULL DEFAULT 0
+            )
+            """
         };
 
 

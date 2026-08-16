@@ -1,0 +1,2 @@
+sed -i '' 's/private String password;           \/\/ BCrypt hash/private String password;           \/\/ BCrypt hash\n    private String pinHash;/' src/main/java/com/pms/model/User.java
+sed -i '' 's/public String getPassword()                    { return password; }/public String getPassword()                    { return password; }\n\n    public String getPinHash()                    { return pinHash; }\n    public void setPinHash(String pinHash)        { this.pinHash = pinHash; }/' src/main/java/com/pms/model/User.java

@@ -53,6 +53,8 @@ public class CustomersController {
         colEmail.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getEmail()));
         colAddress.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getAddress()));
 
+        com.pms.util.UIUtil.setTooltipCellFactory(colName, colPhone, colEmail, colAddress);
+
         colActions.setCellValueFactory(data -> new SimpleObjectProperty<>(data.getValue()));
         colActions.setCellFactory(tc -> new TableCell<>() {
             private final Button purchasesBtn = new Button("Sales");
@@ -151,6 +153,7 @@ public class CustomersController {
 
     private void openCustomerDialog(Customer existingCustomer) {
         Dialog<Customer> dialog = new Dialog<>();
+         dialog.initOwner(com.pms.util.Navigator.getStage());
         dialog.initOwner(customerTable.getScene().getWindow());
         dialog.setTitle(existingCustomer == null ? "Add Customer" : "Edit Customer");
         dialog.setHeaderText(null);
@@ -227,10 +230,12 @@ public class CustomersController {
                 Notifier.error("Failed to save customer.");
             }
         });
+        Platform.runLater(customerTable::requestFocus);
     }
 
     private void handleDelete(Customer c) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.initOwner(com.pms.util.Navigator.getStage());
         alert.initOwner(customerTable.getScene().getWindow());
         alert.setTitle("Delete Customer");
         alert.setHeaderText("Delete '" + c.getName() + "'?");
@@ -248,10 +253,12 @@ public class CustomersController {
                 }
             }
         });
+        Platform.runLater(customerTable::requestFocus);
     }
 
     private void openPurchasesDialog(Customer c) {
         Dialog<Void> dialog = new Dialog<>();
+         dialog.initOwner(com.pms.util.Navigator.getStage());
         dialog.initOwner(customerTable.getScene().getWindow());
         dialog.setTitle("Purchases - " + c.getName());
         dialog.setHeaderText("Purchase History for " + c.getName());
@@ -330,5 +337,6 @@ public class CustomersController {
 
         dialog.getDialogPane().setContent(salesTable);
         dialog.showAndWait();
+        Platform.runLater(customerTable::requestFocus);
     }
 }

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.pms.controller.ShiftsController">
+
+    <!-- Top Bar -->
+    <top>
+        <HBox spacing="16" alignment="CENTER_LEFT" style="-fx-padding: 20;">
+            <Label text="Shifts Tracker" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #18181b;"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="↻ Refresh" onAction="#initialize"/>
+        </HBox>
+    </top>
+
+    <!-- Center: The TableView -->
+    <center>
+        <VBox spacing="0" style="-fx-padding: 0 20 20 20;">
+            <TableView fx:id="shiftsTable" VBox.vgrow="ALWAYS"
+                       style="-fx-background-radius: 8 8 0 0; -fx-border-radius: 8 8 0 0; -fx-border-color: #d4d4d8; -fx-border-width: 1 1 0 1;">
+                <columns>
+                    <TableColumn fx:id="colStatus" text="Status" prefWidth="100"/>
+                    <TableColumn fx:id="colCashier" text="Cashier" prefWidth="150"/>
+                    <TableColumn fx:id="colStart" text="Started" prefWidth="150"/>
+                    <TableColumn fx:id="colEnd" text="Ended" prefWidth="150"/>
+                    <TableColumn fx:id="colStartingCash" text="Start Cash" prefWidth="100"/>
+                    <TableColumn fx:id="colExpectedCash" text="Exp. End Cash" prefWidth="110"/>
+                    <TableColumn fx:id="colDeclaredCash" text="Decl. End Cash" prefWidth="110"/>
+                    <TableColumn fx:id="colDiscrepancy" text="Discrepancy" prefWidth="100"/>
+                    <TableColumn fx:id="colActions" text="Actions" prefWidth="120"/>
+                </columns>
+                <columnResizePolicy>
+                    <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                </columnResizePolicy>
+            </TableView>
+            
+            <StackPane style="-fx-background-color: #ffffff; -fx-border-color: #d4d4d8; -fx-border-width: 0 1 1 1; -fx-background-radius: 0 0 8 8; -fx-border-radius: 0 0 8 8; -fx-padding: 8;">
+                <Pagination fx:id="pagination" maxPageIndicatorCount="5"/>
+            </StackPane>
+        </VBox>
+    </center>
+</BorderPane>

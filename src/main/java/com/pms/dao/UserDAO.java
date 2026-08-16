@@ -190,6 +190,35 @@ public class UserDAO {
         return list;
     }
 
+    public List<User> search(String query, String statusFilter) throws SQLException {
+        List<User> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder("SELECT * FROM users WHERE 1=1 ");
+        
+        if ("Active".equals(statusFilter)) {
+            sql.append("AND active = 1 ");
+        } else if ("Inactive".equals(statusFilter)) {
+            sql.append("AND active = 0 ");
+        }
+        
+        if (query != null && !query.trim().isEmpty()) {
+            sql.append("AND (username LIKE ? OR full_name LIKE ?) ");
+        }
+        
+        sql.append("ORDER BY full_name");
+        
+        try (PreparedStatement ps = conn().prepareStatement(sql.toString())) {
+            if (query != null && !query.trim().isEmpty()) {
+                String term = "%" + query.trim() + "%";
+                ps.setString(1, term);
+                ps.setString(2, term);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) list.add(map(rs));
+            }
+        }
+        return list;
+    }
+
     public User findById(String id) throws SQLException {
         try (PreparedStatement ps = conn().prepareStatement(
                 "SELECT * FROM users WHERE id = ?")) {
@@ -372,6 +401,37 @@ public class UserDAO {
     }
 
     // ─── Deactivate ───────────────────────────────────────────────────────────
+    /**
+     * Admin forces a password reset for a user.
+     * @return the newly generated temporary password.
+     */
+    public String adminResetPassword(String userId) throws SQLException {
+        String tempPassword = generateTempPassword();
+        String tempHash     = BCrypt.hashpw(tempPassword, BCrypt.gensalt());
+
+        String sql = """
+            UPDATE users
+            SET password = ?,
+                is_temp_password = 1,
+                last_password_change = ?,
+                prev_password_hash = ?,
+                updated_at = ?,
+                synced = 0
+            WHERE id = ?
+            """;
+
+        try (PreparedStatement ps = conn().prepareStatement(sql)) {
+            ps.setString(1, tempHash);
+            ps.setString(2, DateTimeUtil.now());
+            ps.setString(3, tempHash); // Can't reuse this temp pass
+            ps.setString(4, DateTimeUtil.now());
+            ps.setString(5, userId);
+            ps.executeUpdate();
+        }
+
+        logSync("users", userId, "UPDATE");
+        return tempPassword;
+    }
 
     public void deactivate(String id) throws SQLException {
         try (PreparedStatement ps = conn().prepareStatement(
@@ -380,7 +440,17 @@ public class UserDAO {
             ps.setString(2, id);
             ps.executeUpdate();
         }
-        logSync("users", id, "DELETE");
+        logSync("users", id, "UPDATE");
+    }
+
+    public void activate(String id) throws SQLException {
+        try (PreparedStatement ps = conn().prepareStatement(
+                "UPDATE users SET active = 1, updated_at = ?, synced = 0 WHERE id = ?")) {
+            ps.setString(1, DateTimeUtil.now());
+            ps.setString(2, id);
+            ps.executeUpdate();
+        }
+        logSync("users", id, "UPDATE");
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -411,6 +481,7 @@ public class UserDAO {
         // New columns — may be null on older schema rows
         try { u.setTempPassword(rs.getInt("is_temp_password") == 1); } catch (SQLException ignored) {}
         try { u.setLastPasswordChange(rs.getString("last_password_change")); } catch (SQLException ignored) {}
+        try { u.setPinHash(rs.getString("pin_hash")); } catch (SQLException ignored) {}
 
         return u;
     }

@@ -7,30 +7,124 @@
             fx:controller="com.pms.controller.SettingsController"
             style="-fx-background-color: #f0f0f2;">
 
-    <top>
-        <VBox style="-fx-padding: 30 20 10 20;" spacing="8">
-            <Label text="Global Settings" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #18181b;"/>
-            <Label text="Configure system-wide preferences." style="-fx-text-fill: #71717a;"/>
-        </VBox>
-    </top>
-
     <center>
-        <VBox style="-fx-padding: 20;" spacing="20">
-            
-            <VBox spacing="10" style="-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: #d4d4d8; -fx-border-radius: 8; -fx-padding: 20;" maxWidth="500">
-                <Label text="Localization" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #18181b;"/>
-                <Separator/>
+        <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-border-color: transparent;">
+            <VBox spacing="20" style="-fx-padding: 30 20 30 20;" maxWidth="Infinity">
                 
-                <VBox spacing="4">
-                    <Label text="Currency Symbol"/>
-                    <ComboBox fx:id="currencyCombo" promptText="Select Currency" maxWidth="Infinity"/>
-                </VBox>
-                
-                <HBox alignment="CENTER_RIGHT" style="-fx-padding: 10 0 0 0;">
-                    <Button text="Save Preferences" onAction="#handleSave" defaultButton="true"/>
+                <HBox alignment="CENTER_LEFT" spacing="15">
+                    <VBox spacing="8">
+                        <Label text="System Settings" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #18181b;"/>
+                        <Label text="Configure system-wide preferences, security, and cloud database." style="-fx-text-fill: #71717a;"/>
+                    </VBox>
+                    <Region HBox.hgrow="ALWAYS" />
+                    <TextField fx:id="searchField" promptText="Search settings..." prefWidth="250" />
                 </HBox>
-            </VBox>
+                
+                <!-- Localization -->
+                <VBox fx:id="localizationPanel" spacing="10" style="-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: #d4d4d8; -fx-border-radius: 8; -fx-padding: 20;" >
+                    <Label text="Localization" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #18181b;"/>
+                    <Separator/>
+                    
+                    <VBox spacing="4">
+                        <Label text="Currency Symbol"/>
+                        <ComboBox fx:id="currencyCombo" promptText="Select Currency" maxWidth="Infinity"/>
+                    </VBox>
+                    
+                    <HBox alignment="CENTER_RIGHT" style="-fx-padding: 10 0 0 0;">
+                        <Button text="Save Preferences" onAction="#handleSave"/>
+                    </HBox>
+                </VBox>
 
-        </VBox>
+                <!-- Account -->
+                <VBox fx:id="securityPanel" spacing="10" style="-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: #d4d4d8; -fx-border-radius: 8; -fx-padding: 20;" >
+                    <Label text="Account" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #18181b;"/>
+                    <Separator/>
+                    
+                    <VBox spacing="10">
+                        <VBox spacing="4">
+                            <Label text="Full Name" style="-fx-text-fill: #71717a;"/>
+                            <Label fx:id="accFullNameLabel" style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
+                        </VBox>
+                        <VBox spacing="4">
+                            <Label text="Username" style="-fx-text-fill: #71717a;"/>
+                            <Label fx:id="accUsernameLabel" style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
+                        </VBox>
+                        <VBox spacing="4">
+                            <Label text="Role" style="-fx-text-fill: #71717a;"/>
+                            <Label fx:id="accRoleLabel" style="-fx-font-size: 14px; -fx-font-weight: bold;"/>
+                        </VBox>
+                    </VBox>
+                    
+                    <HBox alignment="CENTER_RIGHT" spacing="10" style="-fx-padding: 10 0 0 0;">
+                        <Button text="Change PIN" onAction="#handleOpenChangePin"/>
+                        <Button text="Change Password" onAction="#handleOpenChangePassword"/>
+                    </HBox>
+                </VBox>
+
+                <!-- Cloud Database -->
+                <VBox fx:id="cloudDbPanel" spacing="10" style="-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: #d4d4d8; -fx-border-radius: 8; -fx-padding: 20;" >
+                    <HBox alignment="CENTER_LEFT" spacing="10">
+                        <Label text="Cloud Database Connection" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #18181b;"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="dbActiveStatusLabel" text="Disconnected" style="-fx-text-fill: #ef4444;"/>
+                        <Button fx:id="connectToggleBtn" text="Connect" onAction="#handleConnectToggle" />
+                    </HBox>
+                    <Separator/>
+                    
+                    <VBox spacing="4">
+                        <Label text="Database Type"/>
+                        <ComboBox fx:id="dbTypeCombo" maxWidth="Infinity"/>
+                    </VBox>
+                    <HBox spacing="10">
+                        <VBox spacing="4" HBox.hgrow="ALWAYS">
+                            <Label text="Host / Endpoint"/>
+                            <TextField fx:id="dbHostField" promptText="e.g. database.com"/>
+                        </VBox>
+                        <VBox spacing="4">
+                            <Label text="Port"/>
+                            <TextField fx:id="dbPortField" prefWidth="80"/>
+                        </VBox>
+                    </HBox>
+                    <VBox spacing="4">
+                        <Label text="Database Name"/>
+                        <TextField fx:id="dbNameField" promptText="e.g. pms_db"/>
+                    </VBox>
+                    <HBox spacing="10">
+                        <VBox spacing="4" HBox.hgrow="ALWAYS">
+                            <Label text="Username"/>
+                            <TextField fx:id="dbUserField" />
+                        </VBox>
+                        <VBox spacing="4" HBox.hgrow="ALWAYS">
+                            <Label text="Password"/>
+                            <PasswordField fx:id="dbPassField" />
+                        </VBox>
+                    </HBox>
+                    <CheckBox fx:id="dbSslCheck" text="Require SSL / TLS Connection"/>
+                    
+                    <HBox alignment="CENTER_RIGHT" spacing="10" style="-fx-padding: 10 0 0 0;">
+                        <Label fx:id="dbStatusLabel" text="Testing..." visible="false" managed="false"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Button text="Test Connection" onAction="#handleDbTest"/>
+                        <Button fx:id="dbSaveBtn" text="Save Configuration" onAction="#handleDbSave" disable="true"/>
+                    </HBox>
+                </VBox>
+
+                <!-- About Section -->
+                <VBox fx:id="aboutPanel" spacing="10" style="-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: #d4d4d8; -fx-border-radius: 8; -fx-padding: 20;" >
+                    <Label text="About PMS" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #18181b;"/>
+                    <Separator/>
+                    <HBox alignment="CENTER_LEFT" spacing="20">
+                        <VBox spacing="4">
+                            <Label text="Product Management System" style="-fx-font-weight: bold; -fx-font-size: 14px;"/>
+                            <Label text="Version: 1.0.0" style="-fx-text-fill: #71717a;"/>
+                            <Label text="© 2026 PMS Inc. All rights reserved." style="-fx-text-fill: #71717a;"/>
+                        </VBox>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Button text="Check for Updates" onAction="#handleCheckUpdates"/>
+                    </HBox>
+                </VBox>
+
+            </VBox>
+        </ScrollPane>
     </center>
 </BorderPane>

@@ -27,7 +27,7 @@ public class SyncManager {
     private static final SyncManager INSTANCE = new SyncManager();
 
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
-        Thread t = new Thread(r, "PharmSys-Sync");
+        Thread t = new Thread(r, "PMS-Sync");
         t.setDaemon(true);
         return t;
     });

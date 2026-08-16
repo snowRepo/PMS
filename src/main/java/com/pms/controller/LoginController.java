@@ -61,6 +61,7 @@ public class LoginController {
 
                     Session.login(user);
                     logger.info("Login: {} ({})", user.getUsername(), user.getRole());
+                    com.pms.dao.ActivityLogDAO.log("LOGIN", "User logged in.");
 
                     // Check: forced password change (temp password)?
                     if (user.isTempPassword()) {
@@ -89,9 +90,11 @@ public class LoginController {
                     Navigator.navigateTo("/fxml/Dashboard.fxml");
 
                     // Expand window for dashboard
-                    Navigator.getStage().setWidth(1100);
-                    Navigator.getStage().setHeight(680);
-                    Navigator.getStage().centerOnScreen();
+                    if (!Navigator.getStage().isMaximized() && !Navigator.getStage().isFullScreen()) {
+                        Navigator.getStage().setWidth(1100);
+                        Navigator.getStage().setHeight(680);
+                        Navigator.getStage().centerOnScreen();
+                    }
                 });
 
             } catch (SQLException e) {

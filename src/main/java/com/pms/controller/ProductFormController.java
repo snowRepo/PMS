@@ -164,8 +164,10 @@ public class ProductFormController {
             // Save to DB
             if (isNew) {
                 productDAO.create(currentProduct);
+                com.pms.dao.ActivityLogDAO.log("PRODUCT_CREATED", "Product added: " + currentProduct.getName());
             } else {
                 productDAO.update(currentProduct);
+                com.pms.dao.ActivityLogDAO.log("PRODUCT_UPDATED", "Product updated: " + currentProduct.getName());
             }
 
             saved = true;

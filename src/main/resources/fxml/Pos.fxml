@@ -90,11 +90,11 @@
                         <VBox spacing="6" GridPane.columnIndex="1" GridPane.rowIndex="0">
                             <VBox spacing="2">
                                 <Label text="Cart Discount:" style="-fx-font-weight: bold; -fx-text-fill: #3f3f46;"/>
-                                <TextField fx:id="cartDiscountField" text="0.00" promptText="e.g. 10 or 10%"/>
+                                <TextField fx:id="cartDiscountField" text="0.00" promptText="10.00 | 10%"/>
                             </VBox>
                             <VBox spacing="2">
                                 <Label text="Tax:" style="-fx-font-weight: bold; -fx-text-fill: #3f3f46;"/>
-                                <TextField fx:id="cartTaxField" text="0.00" promptText="e.g. 5 or 5%"/>
+                                <TextField fx:id="cartTaxField" text="0.00" promptText="5.00 | 5%"/>
                             </VBox>
                             <VBox spacing="2">
                                 <Label text="Amount Tendered:" style="-fx-font-weight: bold; -fx-text-fill: #3f3f46;"/>
@@ -118,7 +118,7 @@
                         </HBox>
                     </VBox>
 
-                    <Button text="COMPLETE SALE &amp; PRINT" onAction="#handleCheckout" maxWidth="Infinity" style="-fx-background-color: #039ED3; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16px; -fx-padding: 10; -fx-background-radius: 4; -fx-cursor: hand;"/>
+                    <Button fx:id="btnCheckout" text="COMPLETE SALE &amp; PRINT" onAction="#handleCheckout" maxWidth="Infinity" style="-fx-background-color: #039ED3; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16px; -fx-padding: 10; -fx-background-radius: 4; -fx-cursor: hand;"/>
 
                 </VBox>
             </ScrollPane>

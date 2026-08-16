@@ -54,6 +54,7 @@ public class PosController {
     @FXML private TextField refField;
     @FXML private TextField amountTenderedField;
     @FXML private Label changeLabel;
+    @FXML private Button btnCheckout;
 
     private final ProductDAO productDAO = new ProductDAO();
     private final CustomerDAO customerDAO = new CustomerDAO();
@@ -64,6 +65,28 @@ public class PosController {
 
     @FXML
     public void initialize() {
+        if ("cashier".equalsIgnoreCase(Session.current().getRole())) {
+            try {
+                com.pms.model.Shift activeShift = new com.pms.dao.ShiftDAO().getActiveShift(Session.current().getId());
+                if (activeShift == null) {
+                    Notifier.error("You must start a shift from the Dashboard before accessing the POS.");
+                    // Disable all interactions
+                    searchField.setDisable(true);
+                    productsFlowPane.setDisable(true);
+                    customerSearchField.setDisable(true);
+                    cartTable.setDisable(true);
+                    cartDiscountField.setDisable(true);
+                    cartTaxField.setDisable(true);
+                    amountTenderedField.setDisable(true);
+                    paymentMethodCombo.setDisable(true);
+                    btnCheckout.setDisable(true);
+                    return;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        
         setupCartTable();
         setupPaymentMethods();
         loadCustomers();
@@ -273,9 +296,10 @@ public class PosController {
         }
 
         TextInputDialog dialog = new TextInputDialog(String.valueOf(selected.getDiscount()));
-        dialog.setTitle("Item Discount");
+        dialog.initOwner(com.pms.util.Navigator.getStage());
+        dialog.setTitle("Edit Discount");
         dialog.setHeaderText("Enter discount for " + selected.getProductName());
-        dialog.setContentText("Discount Amount (" + CurrencyUtil.getSymbol() + " or %):");
+        dialog.setContentText("Discount Amount (" + CurrencyUtil.getSymbol() + " | %):");
         
         // Attach to main window to prevent full-screen takeover issues on macOS
         if (cartTable.getScene() != null && cartTable.getScene().getWindow() != null) {
@@ -299,11 +323,13 @@ public class PosController {
                 Notifier.error("Invalid discount amount.");
             }
         });
+        javafx.application.Platform.runLater(searchField::requestFocus);
     }
 
     @FXML
     public void handleNewCustomer() {
         Dialog<Customer> dialog = new Dialog<>();
+        dialog.initOwner(com.pms.util.Navigator.getStage());
         dialog.setTitle("New Customer");
         dialog.setHeaderText("Add Customer Details");
 
@@ -368,6 +394,7 @@ public class PosController {
                 Notifier.error("Failed to add customer: " + e.getMessage());
             }
         });
+        javafx.application.Platform.runLater(searchField::requestFocus);
     }
 
     private void updateTotals() {
@@ -492,6 +519,7 @@ public class PosController {
         textArea.setPrefColumnCount(40);
 
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.initOwner(com.pms.util.Navigator.getStage());
         alert.initOwner(cartTable.getScene().getWindow());
         alert.setTitle("Receipt");
         alert.setHeaderText("Transaction Successful");
@@ -506,5 +534,6 @@ public class PosController {
                 Notifier.success("Printing receipt...");
             }
         });
+        javafx.application.Platform.runLater(searchField::requestFocus);
     }
 }

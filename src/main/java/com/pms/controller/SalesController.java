@@ -1,5 +1,7 @@
 package com.pms.controller;
 
+import com.pms.util.Session;
+
 import com.pms.dao.SaleDAO;
 import com.pms.dao.UserDAO;
 import com.pms.model.Sale;
@@ -55,13 +57,14 @@ public class SalesController {
     public void initialize() {
         setupTableColumns();
         setupFilters();
+        checkPermissions();
         loadUsers();
         pagination.setPageFactory(this::createPage);
         refreshData();
     }
 
     private void setupTableColumns() {
-        colDate.setCellValueFactory(d -> new SimpleStringProperty(d.getValue().getSaleDate()));
+        colDate.setCellValueFactory(data -> new SimpleStringProperty(com.pms.util.DateTimeUtil.formatForDisplay(data.getValue().getSaleDate())));
         colRef.setCellValueFactory(d -> {
             String ref = d.getValue().getPaymentRef();
             return new SimpleStringProperty((ref == null || ref.isEmpty()) ? d.getValue().getId().substring(0, 8) : ref);
@@ -112,6 +115,13 @@ public class SalesController {
         refreshData();
     }
 
+    private void checkPermissions() {
+        if ("cashier".equalsIgnoreCase(Session.current().getRole())) {
+            userFilterCombo.setVisible(false);
+            userFilterCombo.setManaged(false);
+        }
+    }
+
     private void loadUsers() {
         new Thread(() -> {
             try {
@@ -132,7 +142,12 @@ public class SalesController {
     }
 
     private String getSearch() { return searchField.getText().trim(); }
-    private String getUserId() { return userFilterCombo.getValue() != null ? userFilterCombo.getValue().getId() : null; }
+    private String getUserId() {
+        if ("cashier".equalsIgnoreCase(Session.current().getRole())) {
+            return Session.current().getId();
+        }
+        return userFilterCombo.getValue() != null ? userFilterCombo.getValue().getId() : null;
+    }
     private String getStartDate() { return startDatePicker.getValue() != null ? startDatePicker.getValue().toString() : null; }
     private String getEndDate() { return endDatePicker.getValue() != null ? endDatePicker.getValue().toString() : null; }
 
@@ -167,6 +182,7 @@ public class SalesController {
 
     private void showSaleDetails(Sale sale) {
         Dialog<Void> dialog = new Dialog<>();
+         dialog.initOwner(com.pms.util.Navigator.getStage());
         dialog.initOwner(salesTable.getScene().getWindow());
         dialog.setTitle("Sale Details - " + sale.getId().substring(0,8));
         dialog.setHeaderText(null);
@@ -236,6 +252,7 @@ public class SalesController {
         content.getChildren().addAll(headerBox, itemsTable, summaryBox);
         dialog.getDialogPane().setContent(content);
         dialog.showAndWait();
+        Platform.runLater(salesTable::requestFocus);
     }
 
     @FXML

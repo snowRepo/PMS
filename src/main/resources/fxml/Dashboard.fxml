@@ -18,19 +18,24 @@
             <Separator style="-fx-opacity: 0.2;"/>
 
             <!-- Navigation Links -->
-            <VBox spacing="8" VBox.vgrow="ALWAYS">
+            <VBox spacing="4" VBox.vgrow="ALWAYS">
                 <Button text="🏠 Dashboard" onAction="#openDashboard" maxWidth="Infinity" alignment="BASELINE_LEFT"/>
-                <Button text="📦 Inventory" onAction="#openInventory" maxWidth="Infinity" alignment="BASELINE_LEFT"/>
-                <Button text="🏷 Categories" onAction="#openCategories" maxWidth="Infinity" alignment="BASELINE_LEFT"/>
-                <Button text="🛒 Sales (POS)" onAction="#openPos" maxWidth="Infinity" alignment="BASELINE_LEFT"/>
-                <Button text="📜 Sales History" onAction="#openSalesHistory" maxWidth="Infinity" alignment="BASELINE_LEFT"/>
-                <Button text="🚚 Purchases" onAction="#openPurchases" maxWidth="Infinity" alignment="BASELINE_LEFT"/>
-                <Button text="👥 Customers" onAction="#openCustomers" maxWidth="Infinity" alignment="BASELINE_LEFT"/>
-                <Button text="📊 Reports" onAction="#openReports" maxWidth="Infinity" alignment="BASELINE_LEFT"/>
+                <Button fx:id="navInventory" text="📦 Inventory" onAction="#openInventory" maxWidth="Infinity" alignment="BASELINE_LEFT"/>
+                <Button fx:id="navCategories" text="🏷 Categories" onAction="#openCategories" maxWidth="Infinity" alignment="BASELINE_LEFT"/>
+                <Button fx:id="navPos" text="🛒 Sales (POS)" onAction="#openPos" maxWidth="Infinity" alignment="BASELINE_LEFT"/>
+                <Button fx:id="navSalesHistory" text="📜 Sales History" onAction="#openSalesHistory" maxWidth="Infinity" alignment="BASELINE_LEFT"/>
+                <Button fx:id="navNewPurchase" text="🚚 New Purchase" onAction="#openNewPurchase" maxWidth="Infinity" alignment="BASELINE_LEFT"/>
+                <Button fx:id="navPurchaseHistory" text="📋 Purchase History" onAction="#openPurchaseHistory" maxWidth="Infinity" alignment="BASELINE_LEFT"/>
+                <Button fx:id="navSuppliers" text="🏢 Suppliers" onAction="#openSuppliers" maxWidth="Infinity" alignment="BASELINE_LEFT"/>
+                <Button fx:id="navCustomers" text="👥 Customers" onAction="#openCustomers" maxWidth="Infinity" alignment="BASELINE_LEFT"/>
+                <Button fx:id="navCashiers" text="👤 Users" onAction="#openCashiers" maxWidth="Infinity" alignment="BASELINE_LEFT"/>
+                <Button fx:id="navShifts" text="⏱️ Shifts" onAction="#openShifts" maxWidth="Infinity" alignment="BASELINE_LEFT"/>
+                <Button fx:id="navReports" text="📊 Reports" onAction="#openReports" maxWidth="Infinity" alignment="BASELINE_LEFT"/>
+                <Button fx:id="navActivityLogs" text="📋 Activity Logs" onAction="#openActivityLogs" maxWidth="Infinity" alignment="BASELINE_LEFT"/>
                 
                 <Region VBox.vgrow="ALWAYS"/>
                 
-                <Button text="⚙ Settings" onAction="#openSettings" maxWidth="Infinity" alignment="BASELINE_LEFT"/>
+                <Button fx:id="navSettings" text="⚙ Settings" onAction="#openSettings" maxWidth="Infinity" alignment="BASELINE_LEFT"/>
             </VBox>
 
             <Separator style="-fx-opacity: 0.2;"/>

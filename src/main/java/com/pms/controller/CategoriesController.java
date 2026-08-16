@@ -141,6 +141,7 @@ public class CategoriesController {
 
     private void openCategoryDialog(Category existingCategory) {
         Dialog<Category> dialog = new Dialog<>();
+         dialog.initOwner(com.pms.util.Navigator.getStage());
         dialog.initOwner(categoryTable.getScene().getWindow());
         dialog.setTitle(existingCategory == null ? "Add Category" : "Edit Category");
         dialog.setHeaderText(null);
@@ -192,26 +193,25 @@ public class CategoriesController {
             try {
                 if (category.getId() == null) {
                     categoryDAO.create(category);
+                    com.pms.dao.ActivityLogDAO.log("CATEGORY_CREATED", "Category created: " + category.getName());
                     Notifier.success("Category created.");
                 } else {
                     categoryDAO.update(category);
+                    com.pms.dao.ActivityLogDAO.log("CATEGORY_UPDATED", "Category updated: " + category.getName());
                     Notifier.success("Category updated.");
                 }
                 refreshData();
-            } catch (SQLException e) {
-                // SQLite unique constraint violation usually throws an exception containing "UNIQUE"
-                if (e.getMessage() != null && e.getMessage().contains("UNIQUE")) {
-                    Notifier.error("A category with that name already exists.");
-                } else {
-                    logger.error("Failed to save category", e);
-                    Notifier.error("Failed to save category.");
-                }
+            } catch (Exception e) {
+                logger.error("Failed to save category", e);
+                Notifier.error("Failed to save category: " + e.getMessage());
             }
         });
+        Platform.runLater(categoryTable::requestFocus);
     }
 
     private void handleDelete(Category c) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.initOwner(com.pms.util.Navigator.getStage());
         alert.initOwner(categoryTable.getScene().getWindow());
         alert.setTitle("Delete Category");
         alert.setHeaderText("Delete '" + c.getName() + "'?");
@@ -221,15 +221,17 @@ public class CategoriesController {
             if (res == ButtonType.OK) {
                 try {
                     categoryDAO.delete(c.getId(), c.getName());
+                    com.pms.dao.ActivityLogDAO.log("CATEGORY_DELETED", "Category deleted: " + c.getName());
                     Notifier.success("Category deleted.");
                     refreshData();
                 } catch (IllegalStateException ex) {
                     Notifier.error(ex.getMessage());
-                } catch (SQLException e) {
+                } catch (Exception e) {
                     logger.error("Failed to delete category", e);
-                    Notifier.error("Database error while deleting category.");
+                    Notifier.error("Failed to delete category: " + e.getMessage());
                 }
             }
         });
+        Platform.runLater(categoryTable::requestFocus);
     }
 }

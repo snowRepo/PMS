@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.geometry.Pos?>
 
 <BorderPane xmlns="http://javafx.com/javafx/17"
             xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.pms.controller.setup.PinSetupController"
+            fx:controller="com.pms.controller.auth.ForcedPinSetupController"
             prefWidth="600" prefHeight="500">
 
     <center>
         <VBox alignment="TOP_CENTER" spacing="32" style="-fx-padding: 30 0 0 0;" BorderPane.alignment="TOP_CENTER">
             <VBox alignment="CENTER" spacing="8">
-                <Label text="Step 3 of 3 — Security PIN"/>
-                <Label text="Set a 6-digit PIN for password recovery"/>
+                <Label text="Set Security PIN"/>
+                <Label text="Set a 6-digit PIN for security operations."/>
             </VBox>
 
             <VBox spacing="12" maxWidth="400">
@@ -28,10 +29,10 @@
                 <Label fx:id="errorLabel" wrapText="true" managed="false" visible="false"/>
 
                 <VBox spacing="8">
-                    <Button text="Set PIN &amp; Finish Setup" onAction="#handleSetPin" defaultButton="true" maxWidth="Infinity"/>
+                    <Button text="Finish Setup" onAction="#handleSave" defaultButton="true" maxWidth="Infinity"/>
                 </VBox>
 
-                <Label text="This PIN will be used to reset your password if you forget it." wrapText="true" alignment="CENTER"/>
+                <Label text="This PIN will be used to authorize sensitive actions." wrapText="true" alignment="CENTER"/>
             </VBox>
         </VBox>
     </center>

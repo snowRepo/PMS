@@ -78,8 +78,8 @@ public class ForgotPasswordController {
     @FXML
     private void handleStep2() {
         String pin = collectPin();
-        if (pin.length() < 6) {
-            showError(step2Error, "Please enter all 6 digits.");
+        if (pin.length() != 6) {
+            showError(step2Error, "PIN must be exactly 6 digits.");
             return;
         }
 

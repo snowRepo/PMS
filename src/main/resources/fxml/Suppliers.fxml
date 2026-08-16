@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.pms.controller.SuppliersController">
+
+    <!-- Top Bar: Search and Add Button -->
+    <top>
+        <HBox spacing="16" alignment="CENTER_LEFT" style="-fx-padding: 20;">
+            <Label text="Suppliers" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #18181b;"/>
+            
+            <Region HBox.hgrow="ALWAYS"/>
+            
+            <!-- Search Field -->
+            <TextField fx:id="searchField" promptText="Search Name or Phone..." prefWidth="250"/>
+                       
+            <!-- Add Supplier Button -->
+            <Button text="+ Add Supplier" onAction="#handleAddSupplier"/>
+        </HBox>
+    </top>
+
+    <!-- Center: The TableView -->
+    <center>
+        <VBox spacing="0" style="-fx-padding: 0 20 20 20;">
+            <TableView fx:id="supplierTable" VBox.vgrow="ALWAYS"
+                       style="-fx-background-radius: 8 8 0 0; -fx-border-radius: 8 8 0 0; -fx-border-color: #d4d4d8; -fx-border-width: 1 1 0 1;">
+                <columns>
+                    <TableColumn fx:id="colName" text="Supplier Name" prefWidth="200"/>
+                    <TableColumn fx:id="colContact" text="Contact Person" prefWidth="150"/>
+                    <TableColumn fx:id="colPhone" text="Phone" prefWidth="120"/>
+                    <TableColumn fx:id="colEmail" text="Email" prefWidth="150"/>
+                    <TableColumn fx:id="colAddress" text="Address" prefWidth="200"/>
+                    <TableColumn fx:id="colActions" text="Actions" prefWidth="120" minWidth="120"/>
+                </columns>
+                <columnResizePolicy>
+                    <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                </columnResizePolicy>
+            </TableView>
+            
+            <!-- Pagination Control directly underneath the table -->
+            <StackPane style="-fx-background-color: #ffffff; -fx-border-color: #d4d4d8; -fx-border-width: 0 1 1 1; -fx-background-radius: 0 0 8 8; -fx-border-radius: 0 0 8 8; -fx-padding: 8;">
+                <Pagination fx:id="pagination" maxPageIndicatorCount="5"/>
+            </StackPane>
+        </VBox>
+    </center>
+</BorderPane>

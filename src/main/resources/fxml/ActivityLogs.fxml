@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Pagination?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.DatePicker?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Priority?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox spacing="20" style="-fx-padding: 30; -fx-background-color: #f8fafc;" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.pms.controller.ActivityLogsController">
+
+    <!-- Top Bar -->
+    <HBox spacing="16" alignment="CENTER_LEFT" style="-fx-padding: 10 0 10 0;">
+        <VBox spacing="8">
+            <Label style="-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #1e293b;" text="Activity Log" />
+            <Label style="-fx-text-fill: #64748b; -fx-font-size: 14px;" text="Audit trail of system events" />
+        </VBox>
+        
+        <Region HBox.hgrow="ALWAYS" />
+        
+        <TextField fx:id="searchField" promptText="Search user, action, or details..." prefWidth="250" />
+        <DatePicker fx:id="startDatePicker" promptText="Start Date" prefWidth="130" />
+        <DatePicker fx:id="endDatePicker" promptText="End Date" prefWidth="130" />
+    </HBox>
+
+    <!-- Table Section -->
+    <VBox VBox.vgrow="ALWAYS" style="-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-padding: 1;">
+        <TableView fx:id="logsTable" VBox.vgrow="ALWAYS" style="-fx-background-radius: 8;">
+            <columns>
+                <TableColumn fx:id="colTimestamp" prefWidth="150" text="Date &amp; Time" />
+                <TableColumn fx:id="colUser" prefWidth="120" text="User" />
+                <TableColumn fx:id="colAction" prefWidth="150" text="Action" />
+                <TableColumn fx:id="colDetails" prefWidth="400" text="Details" />
+            </columns>
+            <!-- Disable column reordering and resizing for cleaner UI -->
+            <columnResizePolicy>
+                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY" />
+            </columnResizePolicy>
+        </TableView>
+
+        <!-- Pagination -->
+        <HBox alignment="CENTER" style="-fx-padding: 10;">
+            <Pagination fx:id="pagination" maxPageIndicatorCount="5" pageCount="1" />
+        </HBox>
+    </VBox>
+
+</VBox>

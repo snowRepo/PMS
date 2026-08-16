@@ -9,10 +9,17 @@
     
     <top>
         <VBox style="-fx-padding: 30 20 20 20;" spacing="20">
-            <VBox spacing="8">
-                <Label text="Dashboard" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #18181b;"/>
-                <Label text="Overview of system metrics." style="-fx-text-fill: #71717a;"/>
-            </VBox>
+            <HBox alignment="CENTER_LEFT">
+                <VBox spacing="8">
+                    <Label text="Dashboard" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #18181b;"/>
+                    <Label text="Overview of system metrics." style="-fx-text-fill: #71717a;"/>
+                </VBox>
+                <Region HBox.hgrow="ALWAYS"/>
+                <VBox fx:id="shiftWidget" spacing="4" alignment="CENTER_RIGHT">
+                    <Label fx:id="shiftStatusLabel" text="No Active Shift" style="-fx-font-weight: bold; -fx-text-fill: #ef4444;"/>
+                    <Button fx:id="btnShiftAction" text="Start Shift" onAction="#handleShiftAction" defaultButton="true"/>
+                </VBox>
+            </HBox>
             
             <HBox spacing="16">
                 <!-- Total Sales Metric Card -->

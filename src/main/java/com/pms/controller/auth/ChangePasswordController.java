@@ -6,6 +6,7 @@ import com.pms.util.Notifier;
 import com.pms.util.Session;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.layout.VBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,22 +75,30 @@ public class ChangePasswordController {
         }
 
         try {
-            String error = userDAO.changePassword(userId, newPass, true);
-            if (error != null) {
-                showError(error);
-                Notifier.error(error);
-                return;
+            if (forced) {
+                // Navigate to Forced PIN Setup and pass the new password
+                ForcedPinSetupController ctrl = Navigator.navigateToWithController("/fxml/auth/ForcedPinSetup.fxml");
+                ctrl.setDetails(userId, newPass);
+            } else {
+                // This else block shouldn't be hit anymore since voluntary uses modals, but left just in case
+                String error = userDAO.changePassword(userId, newPass, false);
+                if (error != null) {
+                    showError(error);
+                    Notifier.error(error);
+                    return;
+                }
+                
+                Notifier.success("Password changed successfully.");
+                logger.info("Password changed for user: {}", userId);
+                com.pms.dao.ActivityLogDAO.log("PASSWORD_CHANGED", "User changed their password.");
+
+                Navigator.navigateTo("/fxml/Dashboard.fxml");
+                if (!Navigator.getStage().isMaximized() && !Navigator.getStage().isFullScreen()) {
+                    Navigator.getStage().setWidth(1100);
+                    Navigator.getStage().setHeight(680);
+                    Navigator.getStage().centerOnScreen();
+                }
             }
-
-            Notifier.success("Password changed successfully.");
-            logger.info("Password changed for user: {}", userId);
-
-            // Navigate to dashboard (user is already in Session from login)
-            Navigator.navigateTo("/fxml/Dashboard.fxml");
-            Navigator.getStage().setWidth(1100);
-            Navigator.getStage().setHeight(680);
-            Navigator.getStage().centerOnScreen();
-
         } catch (Exception e) {
             logger.error("Password change failed", e);
             showError("An error occurred. Please try again.");

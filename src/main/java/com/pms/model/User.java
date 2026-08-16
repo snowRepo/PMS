@@ -13,6 +13,7 @@ public class User {
     private String id;
     private String username;
     private String password;           // BCrypt hash
+    private String pinHash;
     private String role;
     private String fullName;
     private boolean active;
@@ -44,6 +45,9 @@ public class User {
     public void setUsername(String username)        { this.username = username; }
 
     public String getPassword()                    { return password; }
+
+    public String getPinHash()                    { return pinHash; }
+    public void setPinHash(String pinHash)        { this.pinHash = pinHash; }
     public void setPassword(String password)        { this.password = password; }
 
     public String getRole()                        { return role; }

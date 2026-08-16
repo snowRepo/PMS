@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.pms.controller.NewPurchaseController"
+            style="-fx-background-color: #f0f0f2;">
+            
+    <top>
+        <VBox style="-fx-padding: 20 20 10 20;" spacing="8">
+            <Label text="New Purchase Order" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #18181b;"/>
+            <Label text="Create a new purchase order for stock replenishment." style="-fx-text-fill: #71717a;"/>
+        </VBox>
+    </top>
+
+    <center>
+        <HBox spacing="20" style="-fx-padding: 10 20 20 20;">
+            <!-- LEFT: PRODUCT SEARCH -->
+            <VBox spacing="10" HBox.hgrow="ALWAYS" style="-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: #d4d4d8; -fx-border-radius: 8; -fx-padding: 16;">
+                <Label text="Search Products" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+                <HBox spacing="8">
+                    <TextField fx:id="searchField" promptText="Scan barcode or type name..." HBox.hgrow="ALWAYS"/>
+                </HBox>
+                <ScrollPane fitToWidth="true" fitToHeight="true" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent; -fx-border-color: #d4d4d8; -fx-border-width: 1; -fx-border-radius: 4;">
+                    <FlowPane fx:id="productsFlowPane" hgap="12" vgap="12" style="-fx-padding: 16; -fx-background-color: #f9fafb;"/>
+                </ScrollPane>
+            </VBox>
+
+            <!-- RIGHT: CART & PAYMENT -->
+            <ScrollPane fitToWidth="true" fitToHeight="true" style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-color: transparent;" prefWidth="420" minWidth="420">
+                <VBox spacing="8" VBox.vgrow="ALWAYS" style="-fx-background: white; -fx-background-color: white; -fx-background-radius: 8; -fx-border-color: #d4d4d8; -fx-border-radius: 8; -fx-padding: 12;">
+                    
+                    <!-- Supplier Selection -->
+                    <VBox spacing="4">
+                        <Label text="Supplier" style="-fx-font-weight: bold;"/>
+                        <HBox spacing="8">
+                            <TextField fx:id="supplierSearchField" promptText="Search Supplier..." HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                            <Button text="+" onAction="#handleNewSupplier"/>
+                        </HBox>
+                    </VBox>
+
+                    <!-- Cart Table -->
+                    <Label text="Purchase Items" style="-fx-font-weight: bold;"/>
+                    <TableView fx:id="cartTable" style="-fx-border-color: #d4d4d8; -fx-border-width: 1;" minHeight="120" prefHeight="250" editable="true">
+                        <placeholder>
+                            <VBox alignment="CENTER" spacing="8">
+                                <Label text="No items added yet" style="-fx-font-size: 14px; -fx-text-fill: #71717a;"/>
+                            </VBox>
+                        </placeholder>
+                        <columns>
+                            <TableColumn fx:id="colCartName" text="Item" prefWidth="120"/>
+                            <TableColumn fx:id="colCartQty" text="Qty" prefWidth="50"/>
+                            <TableColumn fx:id="colCartCost" text="Unit Cost" prefWidth="80"/>
+                            <TableColumn fx:id="colCartSub" text="Total" prefWidth="90"/>
+                        </columns>
+                    </TableView>
+                    
+                    <HBox spacing="8" alignment="CENTER_RIGHT">
+                        <Button text="Clear List" onAction="#handleClearCart"/>
+                        <Button text="Remove Item" onAction="#handleRemoveItem"/>
+                        <Button text="Edit Item" onAction="#handleEditItemAction"/>
+                    </HBox>
+
+                    <VBox spacing="4">
+                        <Label text="Notes:" style="-fx-font-weight: bold; -fx-text-fill: #3f3f46;"/>
+                        <TextArea fx:id="notesArea" prefHeight="60" promptText="Optional purchase notes..."/>
+                    </VBox>
+
+                    <Region VBox.vgrow="ALWAYS"/>
+
+                    <VBox spacing="4" style="-fx-padding: 8 0;">
+                        <HBox alignment="CENTER_LEFT">
+                            <Label text="TOTAL COST:" style="-fx-font-weight: bold; -fx-text-fill: #18181b;" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                            <Label fx:id="netTotalLabel" text="0.00" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #039ED3;"/>
+                        </HBox>
+                    </VBox>
+
+                    <Button text="PLACE PURCHASE ORDER" onAction="#handlePlaceOrder" maxWidth="Infinity" style="-fx-background-color: #039ED3; -fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 16px; -fx-padding: 10; -fx-background-radius: 4; -fx-cursor: hand;"/>
+                </VBox>
+            </ScrollPane>
+        </HBox>
+    </center>
+</BorderPane>
