@@ -9,18 +9,20 @@ public class SaleItem {
     private String productName;   // display only, not persisted separately
     private int qty;
     private double unitPrice;
+    private double costPrice;
     private double discount;
     private double subtotal;
 
     public SaleItem() {}
 
     public SaleItem(String id, String saleId, String productId, int qty,
-                    double unitPrice, double discount) {
+                    double unitPrice, double costPrice, double discount) {
         this.id          = id;
         this.saleId      = saleId;
         this.productId  = productId;
         this.qty         = qty;
         this.unitPrice   = unitPrice;
+        this.costPrice   = costPrice;
         this.discount    = discount;
         this.subtotal    = (qty * unitPrice) - discount;
     }
@@ -44,6 +46,9 @@ public class SaleItem {
 
     public double getUnitPrice()                   { return unitPrice; }
     public void setUnitPrice(double v)             { this.unitPrice = v; }
+
+    public double getCostPrice()                   { return costPrice; }
+    public void setCostPrice(double v)             { this.costPrice = v; }
 
     public double getDiscount()                    { return discount; }
     public void setDiscount(double discount)       { this.discount = discount; }

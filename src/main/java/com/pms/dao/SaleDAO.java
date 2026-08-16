@@ -311,15 +311,16 @@ public class SaleDAO {
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
     private void insertItem(SaleItem item) throws SQLException {
-        String sql = "INSERT INTO sale_items (id, sale_id, product_id, qty, unit_price, discount, subtotal, synced) VALUES (?,?,?,?,?,?,?,0)";
+        String sql = "INSERT INTO sale_items (id, sale_id, product_id, qty, unit_price, cost_price, discount, subtotal, synced) VALUES (?,?,?,?,?,?,?,?,0)";
         try (PreparedStatement ps = conn().prepareStatement(sql)) {
             ps.setString(1, item.getId());
             ps.setString(2, item.getSaleId());
             ps.setString(3, item.getProductId());
             ps.setInt(4,    item.getQty());
             ps.setDouble(5, item.getUnitPrice());
-            ps.setDouble(6, item.getDiscount());
-            ps.setDouble(7, item.getSubtotal());
+            ps.setDouble(6, item.getCostPrice());
+            ps.setDouble(7, item.getDiscount());
+            ps.setDouble(8, item.getSubtotal());
             ps.executeUpdate();
         }
     }
@@ -368,6 +369,7 @@ public class SaleDAO {
         item.setProductId(rs.getString("product_id"));
         item.setQty(rs.getInt("qty"));
         item.setUnitPrice(rs.getDouble("unit_price"));
+        try { item.setCostPrice(rs.getDouble("cost_price")); } catch (SQLException ignore) {}
         item.setDiscount(rs.getDouble("discount"));
         item.setSubtotal(rs.getDouble("subtotal"));
         return item;

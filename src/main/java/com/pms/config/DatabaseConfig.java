@@ -235,6 +235,7 @@ public class DatabaseConfig {
                 product_id  TEXT NOT NULL,
                 qty         INTEGER NOT NULL,
                 unit_price  REAL NOT NULL,
+                cost_price  REAL NOT NULL DEFAULT 0.0,
                 discount    REAL NOT NULL DEFAULT 0,
                 subtotal    REAL NOT NULL,
                 synced      INTEGER NOT NULL DEFAULT 0,
@@ -373,6 +374,7 @@ public class DatabaseConfig {
             { "customers", "ALTER TABLE customers ADD COLUMN active INTEGER NOT NULL DEFAULT 1" },
             { "purchase_items", "ALTER TABLE purchase_items RENAME COLUMN medicine_id TO product_id" },
             { "shifts", "ALTER TABLE shifts ADD COLUMN discrepancy_resolved INTEGER NOT NULL DEFAULT 0" },
+            { "sale_items", "ALTER TABLE sale_items ADD COLUMN cost_price REAL NOT NULL DEFAULT 0.0" },
             // activity_logs is handled by CREATE TABLE IF NOT EXISTS in createLocalSchema()
         };
 
@@ -475,6 +477,7 @@ public class DatabaseConfig {
                 product_id  VARCHAR(36) NOT NULL,
                 qty         INT NOT NULL,
                 unit_price  DECIMAL(12,2) NOT NULL,
+                cost_price  DECIMAL(12,2) NOT NULL DEFAULT 0.00,
                 discount    DECIMAL(12,2) NOT NULL DEFAULT 0,
                 subtotal    DECIMAL(12,2) NOT NULL,
                 synced      TINYINT NOT NULL DEFAULT 0

@@ -266,6 +266,7 @@ public class PosController {
         newItem.setProductName(p.getName());
         newItem.setQty(1);
         newItem.setUnitPrice(p.getSellingPrice());
+        newItem.setCostPrice(p.getCostPrice());
         newItem.setDiscount(0);
         newItem.recalculate();
         cartList.add(newItem);
