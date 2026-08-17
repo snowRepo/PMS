@@ -259,6 +259,7 @@ public class ShiftsController {
         }
         
         dialog.getDialogPane().setContent(content);
+        com.pms.util.UIUtil.enableEnterToClick(dialog);
         dialog.showAndWait();
     }
 }

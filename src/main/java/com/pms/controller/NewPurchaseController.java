@@ -151,6 +151,8 @@ public class NewPurchaseController {
             return null;
         });
         
+        com.pms.util.UIUtil.enableEnterToClick(dialog);
+        
         dialog.showAndWait().ifPresent(updatedItem -> {
             cartTable.refresh();
             updateTotals();
@@ -323,6 +325,8 @@ public class NewPurchaseController {
             }
             return null;
         });
+
+        com.pms.util.UIUtil.enableEnterToClick(dialog);
 
         dialog.showAndWait().ifPresent(s -> {
             try {

@@ -54,6 +54,12 @@ public class DatabaseConfig {
      * Safe to call when offline — failure is logged, not thrown.
      */
     public static boolean initRemote() {
+        if (!AppPrefs.getBoolean("db_enabled", true)) {
+            logger.info("Cloud database is disabled in settings.");
+            cloudAvailable = false;
+            return false;
+        }
+
         String dbType = AppPrefs.get("db_type", "");
         String host   = AppPrefs.get("db_host", "");
         String port   = AppPrefs.get("db_port", "5432");
@@ -134,7 +140,83 @@ public class DatabaseConfig {
         }
         if (remotePool != null && !remotePool.isClosed())
             remotePool.close();
+        
+        cloudAvailable = false;
         logger.info("All database connections closed.");
+    }
+
+    /**
+     * Drops all local data tables (preserving app_prefs) and recreates the schema.
+     * The result is a clean local database with no records.
+     * @param keepUsers If true, the users table is preserved so offline login still works.
+     */
+    public static void resetLocalData(boolean keepUsers) throws SQLException {
+        java.util.List<String> dropList = new java.util.ArrayList<>(java.util.Arrays.asList(
+            "DROP TABLE IF EXISTS activity_logs",
+            "DROP TABLE IF EXISTS sync_log",
+            "DROP TABLE IF EXISTS sale_items",
+            "DROP TABLE IF EXISTS sales",
+            "DROP TABLE IF EXISTS purchase_items",
+            "DROP TABLE IF EXISTS purchases",
+            "DROP TABLE IF EXISTS products",
+            "DROP TABLE IF EXISTS categories",
+            "DROP TABLE IF EXISTS suppliers",
+            "DROP TABLE IF EXISTS customers",
+            "DROP TABLE IF EXISTS shifts"
+        ));
+
+        if (!keepUsers) {
+            dropList.add("DROP TABLE IF EXISTS users");
+        }
+        // app_prefs is intentionally NOT dropped here
+
+        try (Statement stmt = localConnection.createStatement()) {
+            stmt.execute("PRAGMA foreign_keys = OFF");
+            for (String sql : dropList) stmt.execute(sql);
+            stmt.execute("PRAGMA foreign_keys = ON");
+        }
+        createLocalSchema();
+        runMigrations();
+        logger.info("Local database has been wiped and schema recreated.");
+    }
+
+    /**
+     * Deletes all rows from every remote table without dropping the schema.
+     * Safe to call while the remote pool is active.
+     */
+    public static void wipeRemoteData() throws SQLException {
+        if (!cloudAvailable || remotePool == null) {
+            throw new SQLException("No active cloud connection.");
+        }
+
+        String[] tables = {
+            "activity_logs", "sync_log",
+            "sale_items", "sales",
+            "purchase_items", "purchases",
+            "products", "categories",
+            "suppliers", "customers",
+            "shifts", "users", "app_prefs"
+        };
+
+        try (Connection conn = remotePool.getConnection();
+             Statement stmt = conn.createStatement()) {
+            // Disable FK checks for the session (works on PostgreSQL, MySQL, MariaDB)
+            try { stmt.execute("SET session_replication_role = 'replica'"); } catch (SQLException ignored) {
+                try { stmt.execute("SET FOREIGN_KEY_CHECKS=0"); } catch (SQLException ignored2) { /* MariaDB/MySQL */ }
+            }
+            for (String table : tables) {
+                try {
+                    stmt.execute("DELETE FROM " + table);
+                } catch (SQLException e) {
+                    logger.warn("Could not wipe remote table '{}': {}", table, e.getMessage());
+                }
+            }
+            // Re-enable FK checks
+            try { stmt.execute("SET session_replication_role = 'origin'"); } catch (SQLException ignored) {
+                try { stmt.execute("SET FOREIGN_KEY_CHECKS=1"); } catch (SQLException ignored2) { /* MariaDB/MySQL */ }
+            }
+        }
+        logger.info("Remote database data has been wiped.");
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -410,14 +492,14 @@ public class DatabaseConfig {
                 password             TEXT NOT NULL,
                 role                 VARCHAR(30) NOT NULL DEFAULT 'cashier',
                 full_name            VARCHAR(200),
-                active               TINYINT NOT NULL DEFAULT 1,
+                active               SMALLINT NOT NULL DEFAULT 1,
                 pin_hash             TEXT,
-                is_temp_password     TINYINT NOT NULL DEFAULT 0,
+                is_temp_password     SMALLINT NOT NULL DEFAULT 0,
                 last_password_change VARCHAR(30) NOT NULL,
                 prev_password_hash   TEXT,
                 created_at           VARCHAR(30) NOT NULL,
                 updated_at           VARCHAR(30) NOT NULL,
-                synced               TINYINT NOT NULL DEFAULT 0
+                synced               SMALLINT NOT NULL DEFAULT 0
             )
             """,
             """
@@ -427,7 +509,7 @@ public class DatabaseConfig {
                 description     TEXT,
                 created_at      VARCHAR(30) NOT NULL,
                 updated_at      VARCHAR(30) NOT NULL,
-                synced          TINYINT NOT NULL DEFAULT 0
+                synced          SMALLINT NOT NULL DEFAULT 0
             )
             """,
             """
@@ -445,10 +527,10 @@ public class DatabaseConfig {
                 reorder_level   INT NOT NULL DEFAULT 10,
                 expiry_date     VARCHAR(20),
                 description     TEXT,
-                active          TINYINT NOT NULL DEFAULT 1,
+                active          SMALLINT NOT NULL DEFAULT 1,
                 created_at      VARCHAR(30) NOT NULL,
                 updated_at      VARCHAR(30) NOT NULL,
-                synced          TINYINT NOT NULL DEFAULT 0
+                synced          SMALLINT NOT NULL DEFAULT 0
             )
             """,
             """
@@ -467,7 +549,7 @@ public class DatabaseConfig {
                 customer_name   VARCHAR(200),
                 notes           TEXT,
                 created_at      VARCHAR(30) NOT NULL,
-                synced          TINYINT NOT NULL DEFAULT 0
+                synced          SMALLINT NOT NULL DEFAULT 0
             )
             """,
             """
@@ -480,7 +562,7 @@ public class DatabaseConfig {
                 cost_price  DECIMAL(12,2) NOT NULL DEFAULT 0.00,
                 discount    DECIMAL(12,2) NOT NULL DEFAULT 0,
                 subtotal    DECIMAL(12,2) NOT NULL,
-                synced      TINYINT NOT NULL DEFAULT 0
+                synced      SMALLINT NOT NULL DEFAULT 0
             )
             """,
             """
@@ -491,10 +573,10 @@ public class DatabaseConfig {
                 phone       VARCHAR(50),
                 email       VARCHAR(150),
                 address     TEXT,
-                active      TINYINT NOT NULL DEFAULT 1,
+                active      SMALLINT NOT NULL DEFAULT 1,
                 created_at  VARCHAR(30) NOT NULL,
                 updated_at  VARCHAR(30) NOT NULL,
-                synced      TINYINT NOT NULL DEFAULT 0
+                synced      SMALLINT NOT NULL DEFAULT 0
             )
             """,
             """
@@ -504,10 +586,10 @@ public class DatabaseConfig {
                 phone       VARCHAR(50),
                 email       VARCHAR(150),
                 address     TEXT,
-                active      TINYINT NOT NULL DEFAULT 1,
+                active      SMALLINT NOT NULL DEFAULT 1,
                 created_at  VARCHAR(30) NOT NULL,
                 updated_at  VARCHAR(30) NOT NULL,
-                synced      TINYINT NOT NULL DEFAULT 0
+                synced      SMALLINT NOT NULL DEFAULT 0
             )
             """,
             """
@@ -519,7 +601,7 @@ public class DatabaseConfig {
                 status          VARCHAR(30) NOT NULL DEFAULT 'pending',
                 notes           TEXT,
                 created_at      VARCHAR(30) NOT NULL,
-                synced          TINYINT NOT NULL DEFAULT 0
+                synced          SMALLINT NOT NULL DEFAULT 0
             )
             """,
             """
@@ -530,7 +612,7 @@ public class DatabaseConfig {
                 qty         INT NOT NULL,
                 unit_cost   DECIMAL(12,2) NOT NULL,
                 subtotal    DECIMAL(12,2) NOT NULL,
-                synced      TINYINT NOT NULL DEFAULT 0
+                synced      SMALLINT NOT NULL DEFAULT 0
             )
             """,
             """
@@ -546,10 +628,10 @@ public class DatabaseConfig {
                 expected_ending_cash DECIMAL(12,2),
                 declared_ending_cash DECIMAL(12,2),
                 discrepancy          DECIMAL(12,2),
-                discrepancy_resolved TINYINT NOT NULL DEFAULT 0,
+                discrepancy_resolved SMALLINT NOT NULL DEFAULT 0,
                 status               VARCHAR(30) NOT NULL,
                 notes                TEXT,
-                synced               TINYINT NOT NULL DEFAULT 0
+                synced               SMALLINT NOT NULL DEFAULT 0
             )
             """,
 
@@ -559,7 +641,7 @@ public class DatabaseConfig {
             "  record_id   VARCHAR(36) NOT NULL," +
             "  operation   VARCHAR(10) NOT NULL," +
             "  created_at  VARCHAR(30) NOT NULL," +
-            "  synced      TINYINT NOT NULL DEFAULT 0" +
+            "  synced      SMALLINT NOT NULL DEFAULT 0" +
             ")",
             
             """
@@ -570,7 +652,7 @@ public class DatabaseConfig {
                 action      VARCHAR(50) NOT NULL,
                 description TEXT NOT NULL,
                 created_at  VARCHAR(30) NOT NULL,
-                synced      TINYINT NOT NULL DEFAULT 0
+                synced      SMALLINT NOT NULL DEFAULT 0
             )
             """
         };

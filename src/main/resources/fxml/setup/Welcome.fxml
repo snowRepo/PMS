@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.pms.controller.setup.WelcomeController"
+            styleClass="setup-root">
+
+    <center>
+        <VBox alignment="TOP_CENTER" spacing="30" style="-fx-padding: 60 0 0 0;">
+            <!-- Main Content Area -->
+            <VBox spacing="20" maxWidth="600" alignment="CENTER" style="-fx-padding: 40;">
+                
+                <VBox alignment="CENTER" spacing="8">
+                    <Label text="Welcome to PMS" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #18181b;"/>
+                    <Label text="Product Management System" style="-fx-font-size: 14px; -fx-text-fill: #52525b;"/>
+                </VBox>
+
+                <VBox spacing="20" alignment="CENTER" style="-fx-padding: 20 0;">
+                    <Label text="Thank you for choosing PMS to manage your business operations." 
+                           wrapText="true" textAlignment="CENTER" style="-fx-font-size: 14px; -fx-text-fill: #18181b;"/>
+                    
+                    <Label text="This setup wizard will guide you through initializing your local and cloud databases, setting up your administrative account, and configuring your security preferences." 
+                           wrapText="true" textAlignment="CENTER" style="-fx-font-size: 13px; -fx-text-fill: #52525b;"/>
+                    
+                    <Region prefHeight="20"/>
+
+                    <Button text="Continue Setup →" onAction="#handleContinue" defaultButton="true"/>
+                </VBox>
+                
+            </VBox>
+        </VBox>
+    </center>
+
+    <bottom>
+        <Label text="© 2026 PMS - All Rights Reserved" maxWidth="Infinity" alignment="CENTER" style="-fx-padding: 24;"/>
+    </bottom>
+
+</BorderPane>

@@ -198,6 +198,7 @@ public class CashiersController {
                         content.getChildren().add(passField);
                         
                         info.getDialogPane().setContent(content);
+                        com.pms.util.UIUtil.enableEnterToClick(info);
                         info.showAndWait();
                     });
 
@@ -210,6 +211,8 @@ public class CashiersController {
             return null;
         });
 
+        com.pms.util.UIUtil.enableEnterToClick(dialog);
+
         dialog.showAndWait();
         Platform.runLater(cashiersTable::requestFocus);
     }
@@ -220,6 +223,8 @@ public class CashiersController {
         confirm.setTitle("Reset Password");
         confirm.setHeaderText("Reset password for " + user.getUsername() + "?");
         confirm.setContentText("This will generate a new temporary password for this user.");
+        
+        com.pms.util.UIUtil.enableEnterToClick(confirm);
         
         confirm.showAndWait().ifPresent(res -> {
             if (res == ButtonType.OK) {
@@ -241,6 +246,7 @@ public class CashiersController {
                     content.getChildren().add(passField);
                     
                     info.getDialogPane().setContent(content);
+                    com.pms.util.UIUtil.enableEnterToClick(info);
                     info.showAndWait();
                     
                 } catch (Exception e) {
@@ -260,6 +266,8 @@ public class CashiersController {
         confirm.setContentText(user.isActive() 
             ? "This user will no longer be able to log in. Proceed?" 
             : "This user will regain access to the system. Proceed?");
+        
+        com.pms.util.UIUtil.enableEnterToClick(confirm);
         
         confirm.showAndWait().ifPresent(res -> {
             if (res == ButtonType.OK) {

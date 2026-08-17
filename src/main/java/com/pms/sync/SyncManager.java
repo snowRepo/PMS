@@ -72,7 +72,7 @@ public class SyncManager {
 
     // ─── Sync cycle ───────────────────────────────────────────────────────────
 
-    private void syncCycle() {
+    public void syncCycle() {
         // Try to establish cloud connection if not already available
         if (!DatabaseConfig.isCloudAvailable()) {
             logger.debug("Attempting cloud reconnect...");
@@ -233,6 +233,8 @@ public class SyncManager {
         String query;
         if ("sale_items".equals(table) || "purchase_items".equals(table)) {
             query = "SELECT * FROM " + table + " WHERE synced = 0";
+        } else if ("sales".equals(table) || "purchases".equals(table)) {
+            query = "SELECT * FROM " + table + " WHERE created_at > '" + since + "'";
         } else {
             query = "SELECT * FROM " + table + " WHERE updated_at > '" + since + "'";
         }

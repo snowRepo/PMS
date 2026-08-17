@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.pms.controller.auth.ResetDataModalController"
+            prefWidth="480" prefHeight="560"
+            style="-fx-background-color: white;">
+
+    <!-- Header -->
+    <top>
+        <VBox style="-fx-padding: 24 24 16 24; -fx-border-color: transparent transparent #e4e4e7 transparent; -fx-border-width: 1;" spacing="4">
+            <Label text="Reset Data" style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #18181b;"/>
+            <Label text="This action is irreversible. All wiped data cannot be recovered."
+                   style="-fx-text-fill: #71717a; -fx-font-size: 12px;" wrapText="true"/>
+        </VBox>
+    </top>
+
+    <center>
+        <StackPane>
+
+            <!-- STEP 1: Select scope + password -->
+            <VBox fx:id="step1Panel" spacing="20" style="-fx-padding: 24;">
+
+                <Label text="Step 1 of 2 — Choose scope and verify password"
+                       style="-fx-font-size: 11px; -fx-text-fill: #71717a;"/>
+
+                <!-- What to wipe — ToggleGroup is wired in controller code -->
+                <VBox spacing="10" style="-fx-background-color: #f9fafb; -fx-border-color: #e4e4e7; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 16;">
+                    <Label text="Select what to wipe:"
+                           style="-fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: #18181b;"/>
+
+                    <RadioButton fx:id="wipeLocalRadio" text="Wipe Local Database only"/>
+                    <Label text="Deletes all local data. Your next connection will restore data from the cloud."
+                           style="-fx-text-fill: #71717a; -fx-font-size: 11px; -fx-padding: 0 0 4 20;" wrapText="true"/>
+
+                    <RadioButton fx:id="wipeCloudRadio" text="Wipe Cloud Database only"/>
+                    <Label text="Deletes all data from the connected cloud database. Local data is untouched."
+                           style="-fx-text-fill: #71717a; -fx-font-size: 11px; -fx-padding: 0 0 4 20;" wrapText="true"/>
+
+                    <RadioButton fx:id="wipeBothRadio" text="Wipe Both — Full System Reset"/>
+                    <Label text="Destroys all local AND cloud data, clears all credentials and preferences. The app returns to the setup wizard."
+                           style="-fx-text-fill: #71717a; -fx-font-size: 11px; -fx-padding: 0 0 0 20;" wrapText="true"/>
+                </VBox>
+
+                <!-- Password -->
+                <VBox spacing="4">
+                    <Label text="ACCOUNT PASSWORD" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #52525b;"/>
+                    <PasswordField fx:id="passwordField" promptText="Enter your current password" onAction="#handleNext"/>
+                </VBox>
+
+                <Label fx:id="step1ErrorLabel" textFill="#ef4444" wrapText="true"
+                       managed="false" visible="false" style="-fx-font-size: 12px;"/>
+
+                <Region VBox.vgrow="ALWAYS"/>
+
+                <HBox spacing="10" alignment="CENTER_RIGHT">
+                    <Button text="Cancel" onAction="#handleCancel"/>
+                    <Button fx:id="nextBtn" text="Next →" onAction="#handleNext" disable="true" defaultButton="true"/>
+                </HBox>
+
+            </VBox>
+
+            <!-- STEP 2: PIN entry + confirm -->
+            <VBox fx:id="step2Panel" spacing="20" style="-fx-padding: 24;" visible="false" managed="false">
+
+                <Label text="Step 2 of 2 — Confirm with your security PIN"
+                       style="-fx-font-size: 11px; -fx-text-fill: #71717a;"/>
+
+                <VBox spacing="12" style="-fx-background-color: #f9fafb; -fx-border-color: #e4e4e7; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 20;">
+                    <Label text="Enter your 6-digit security PIN to authorize the reset."
+                           style="-fx-text-fill: #52525b; -fx-font-size: 13px;" wrapText="true"/>
+                    <HBox fx:id="pinRow" spacing="8" alignment="CENTER_LEFT"/>
+                </VBox>
+
+                <Label fx:id="step2ErrorLabel" textFill="#ef4444" wrapText="true"
+                       managed="false" visible="false" style="-fx-font-size: 12px;"/>
+
+                <!-- Progress indicator -->
+                <HBox fx:id="progressBox" alignment="CENTER_LEFT" spacing="10" managed="false" visible="false">
+                    <ProgressIndicator prefWidth="20" prefHeight="20"/>
+                    <Label fx:id="progressLabel" text="Wiping data, please wait..." style="-fx-text-fill: #71717a;"/>
+                </HBox>
+
+                <Region VBox.vgrow="ALWAYS"/>
+
+                <HBox spacing="10" alignment="CENTER_RIGHT">
+                    <Button text="← Back" onAction="#handleBack"/>
+                    <Button fx:id="confirmBtn" text="Confirm Reset" onAction="#handleConfirm" disable="true" defaultButton="true"/>
+                </HBox>
+
+            </VBox>
+
+        </StackPane>
+    </center>
+
+</BorderPane>

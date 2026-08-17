@@ -34,6 +34,7 @@ public class DbSetupController {
 
     @FXML
     public void initialize() {
+        Navigator.setTitle("Database Connection");
         dbTypeCombo.setItems(FXCollections.observableArrayList("PostgreSQL", "MySQL", "MariaDB"));
         dbTypeCombo.getSelectionModel().selectFirst();
 

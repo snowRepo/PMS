@@ -35,9 +35,9 @@ public class ChangePinModalController {
 
     @FXML
     public void initialize() {
-        buildPinRow(currentPinRow, currentPinFields);
-        buildPinRow(newPinRow, newPinFields);
-        buildPinRow(confirmPinRow, confirmPinFields);
+        buildPinRow(currentPinRow, currentPinFields, () -> newPinFields.get(0).requestFocus());
+        buildPinRow(newPinRow, newPinFields, () -> confirmPinFields.get(0).requestFocus());
+        buildPinRow(confirmPinRow, confirmPinFields, this::handleSave);
     }
 
     @FXML
@@ -92,7 +92,7 @@ public class ChangePinModalController {
         closeModal();
     }
 
-    private void buildPinRow(HBox row, List<TextField> fields) {
+    private void buildPinRow(HBox row, List<TextField> fields, Runnable onComplete) {
         row.setAlignment(Pos.CENTER);
         for (int i = 0; i < 6; i++) {
             PasswordField tf = new PasswordField();
@@ -113,9 +113,13 @@ public class ChangePinModalController {
                     tf.setText(oldVal);
                     return;
                 }
-                // Auto-advance
-                if (newVal.length() == 1 && idx < fields.size() - 1) {
-                    fields.get(idx + 1).requestFocus();
+                // Auto-advance or fire completion
+                if (newVal.length() == 1) {
+                    if (idx < fields.size() - 1) {
+                        fields.get(idx + 1).requestFocus();
+                    } else {
+                        onComplete.run();
+                    }
                 }
             });
 

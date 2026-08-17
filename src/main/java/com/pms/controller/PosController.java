@@ -307,6 +307,8 @@ public class PosController {
             dialog.initOwner(cartTable.getScene().getWindow());
         }
 
+        com.pms.util.UIUtil.enableEnterToClick(dialog);
+
         Optional<String> result = dialog.showAndWait();
         result.ifPresent(val -> {
             try {
@@ -382,6 +384,8 @@ public class PosController {
             }
             return null;
         });
+
+        com.pms.util.UIUtil.enableEnterToClick(dialog);
 
         Optional<Customer> result = dialog.showAndWait();
         result.ifPresent(c -> {
@@ -528,6 +532,8 @@ public class PosController {
         
         ButtonType printBtn = new ButtonType("Print", ButtonBar.ButtonData.OK_DONE);
         alert.getButtonTypes().setAll(printBtn, ButtonType.CLOSE);
+        
+        com.pms.util.UIUtil.enableEnterToClick(alert);
         
         alert.showAndWait().ifPresent(type -> {
             if (type == printBtn) {

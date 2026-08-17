@@ -25,6 +25,7 @@ public class SettingsController {
     @FXML private javafx.scene.layout.VBox securityPanel;
     @FXML private javafx.scene.layout.VBox cloudDbPanel;
     @FXML private javafx.scene.layout.VBox aboutPanel;
+    @FXML private javafx.scene.layout.VBox dangerZonePanel;
 
     @FXML private ComboBox<String> currencyCombo;
 
@@ -76,6 +77,8 @@ public class SettingsController {
                 cloudDbPanel.setManaged(false);
                 aboutPanel.setVisible(false);
                 aboutPanel.setManaged(false);
+                dangerZonePanel.setVisible(false);
+                dangerZonePanel.setManaged(false);
             }
         }
 
@@ -86,11 +89,14 @@ public class SettingsController {
             boolean showSec = "security".contains(q) || "account".contains(q) || "password".contains(q) || "pin".contains(q) || "username".contains(q);
             boolean showDb = "database".contains(q) || "cloud".contains(q) || "host".contains(q) || "connection".contains(q) || "port".contains(q) || "sql".contains(q);
             boolean showAbout = "about".contains(q) || "version".contains(q) || "update".contains(q);
+            boolean showDanger = "danger".contains(q) || "reset".contains(q) || "wipe".contains(q) || "nuke".contains(q) || "delete".contains(q);
 
-            if (Session.current() != null && "cashier".equalsIgnoreCase(Session.current().getRole())) {
+            boolean isCashier = Session.current() != null && "cashier".equalsIgnoreCase(Session.current().getRole());
+            if (isCashier) {
                 showLoc = false;
                 showDb = false;
                 showAbout = false;
+                showDanger = false;
             }
 
             localizationPanel.setVisible(showLoc);
@@ -101,6 +107,8 @@ public class SettingsController {
             cloudDbPanel.setManaged(showDb);
             aboutPanel.setVisible(showAbout);
             aboutPanel.setManaged(showAbout);
+            dangerZonePanel.setVisible(showDanger);
+            dangerZonePanel.setManaged(showDanger);
         });
         currencyCombo.getItems().addAll(currencies);
         String currentSymbol = CurrencyUtil.getSymbol();
@@ -171,13 +179,18 @@ public class SettingsController {
             javafx.scene.Parent root = loader.load();
             javafx.stage.Stage stage = new javafx.stage.Stage();
             stage.setTitle(title);
-            stage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+            // initOwner must be set BEFORE initModality — keeps modal on the same
+            // desktop space as the primary window (critical for macOS full-screen mode)
+            stage.initOwner(com.pms.util.Navigator.getStage());
+            stage.initModality(javafx.stage.Modality.WINDOW_MODAL);
             stage.setResizable(false);
             
             // Re-use current styles
             javafx.scene.Scene scene = new javafx.scene.Scene(root);
+            com.pms.util.UIUtil.enableEnterToClick(scene);
             scene.getStylesheets().add(getClass().getResource("/css/main.css").toExternalForm());
             stage.setScene(scene);
+            stage.centerOnScreen();
             
             stage.showAndWait();
         } catch (Exception e) {
@@ -218,22 +231,42 @@ public class SettingsController {
     @FXML
     public void handleConnectToggle() {
         if (DatabaseConfig.isCloudAvailable()) {
-            // Disconnect
-            DatabaseConfig.closeAll(); 
-            DatabaseConfig.initLocal(); // Re-init local connection because closeAll closes local too!
-            
-            AppPrefs.set("db_host", ""); // Clear host to ensure it stays disconnected on restart
-            updateConnectionToggleState();
-            Notifier.info("Disconnected from cloud database.");
+            // Disconnect (fast — no async needed, but keep UX consistent)
+            connectToggleBtn.setDisable(true);
+            connectToggleBtn.setText("Disconnecting...");
+
+            new Thread(() -> {
+                DatabaseConfig.closeAll();
+                DatabaseConfig.initLocal(); // Re-init local connection because closeAll closes local too!
+                AppPrefs.set("db_enabled", "false");
+
+                Platform.runLater(() -> {
+                    updateConnectionToggleState();
+                    Notifier.info("Disconnected from cloud database.");
+                });
+            }, "Settings-DB-Disconnect").start();
+
         } else {
-            // Reconnect
-            boolean ok = DatabaseConfig.initRemote();
-            updateConnectionToggleState();
-            if (ok) {
-                Notifier.success("Connected to cloud database!");
-            } else {
-                Notifier.error("Failed to connect to cloud database.");
-            }
+            // Reconnect — async so UI doesn't freeze
+            connectToggleBtn.setDisable(true);
+            connectToggleBtn.setText("Connecting...");
+            dbActiveStatusLabel.setText("Connecting...");
+            dbActiveStatusLabel.setStyle("-fx-text-fill: #f59e0b; -fx-font-weight: bold;");
+            AppPrefs.set("db_enabled", "true");
+
+            new Thread(() -> {
+                boolean ok = DatabaseConfig.initRemote();
+
+                Platform.runLater(() -> {
+                    updateConnectionToggleState();
+                    if (ok) {
+                        Notifier.success("Connected to cloud database!");
+                    } else {
+                        AppPrefs.set("db_enabled", "false");
+                        Notifier.error("Failed to connect to cloud database.");
+                    }
+                });
+            }, "Settings-DB-Connect").start();
         }
     }
 
@@ -298,17 +331,26 @@ public class SettingsController {
         AppPrefs.set("db_user", user);
         AppPrefs.set("db_pass", pass);
         AppPrefs.set("db_ssl",  String.valueOf(ssl));
+        AppPrefs.set("db_enabled", "true");
 
-        boolean connected = DatabaseConfig.connectRemote(type, host, port, dbName, user, pass, ssl);
-        updateConnectionToggleState();
-        
-        if (connected) {
-            showDbStatus("Configuration saved!", true);
-            Notifier.success("Cloud database configuration saved and connected!");
-        } else {
-            showDbStatus("Saved, but failed to connect.", false);
-            Notifier.error("Saved, but failed to activate connection.");
-        }
+        dbSaveBtn.setDisable(true);
+        showDbStatus("Saving and connecting...", null);
+
+        new Thread(() -> {
+            boolean connected = DatabaseConfig.connectRemote(type, host, port, dbName, user, pass, ssl);
+            
+            Platform.runLater(() -> {
+                updateConnectionToggleState();
+                dbSaveBtn.setDisable(false);
+                if (connected) {
+                    showDbStatus("Configuration saved!", true);
+                    Notifier.success("Cloud database configuration saved and connected!");
+                } else {
+                    showDbStatus("Saved, but failed to connect.", false);
+                    Notifier.error("Saved, but failed to activate connection.");
+                }
+            });
+        }, "Settings-DB-Save").start();
     }
 
     private void showDbStatus(String msg, Boolean success) {
@@ -337,5 +379,10 @@ public class SettingsController {
     @FXML
     public void handleCheckUpdates() {
         Notifier.info("You are using the latest version of PMS.");
+    }
+
+    @FXML
+    public void handleOpenResetData() {
+        openModal("/fxml/auth/ResetDataModal.fxml", "Reset Data — Danger Zone");
     }
 }

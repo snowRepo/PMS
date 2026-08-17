@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.pms.controller.setup.EULAController"
+            styleClass="setup-root">
+
+    <center>
+        <VBox alignment="CENTER" spacing="30">
+            <!-- Main Content Area -->
+            <VBox spacing="20" maxWidth="600" alignment="CENTER" style="-fx-padding: 40;">
+                
+                <VBox alignment="CENTER" spacing="8">
+                    <Label text="End User License Agreement" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #18181b;"/>
+                    <Label text="Please read and agree to the terms below to continue." style="-fx-font-size: 14px; -fx-text-fill: #52525b;"/>
+                </VBox>
+
+                <VBox spacing="16" style="-fx-padding: 10 0;">
+                    <ScrollPane fitToWidth="true" prefHeight="280" style="-fx-border-color: #d4d4d8; -fx-background-color: transparent;">
+                        <VBox style="-fx-padding: 16; -fx-background-color: white;">
+                            <Label fx:id="eulaTextLabel" wrapText="true" style="-fx-font-size: 12px; -fx-text-fill: #3f3f46;"/>
+                        </VBox>
+                    </ScrollPane>
+
+                    <CheckBox fx:id="agreeCheckBox" text="I have read and agree to the Terms and Conditions." 
+                              style="-fx-font-size: 13px; -fx-font-weight: bold; -fx-text-fill: #18181b;"/>
+                    
+                    <Region prefHeight="10"/>
+
+                    <HBox alignment="CENTER_RIGHT" spacing="10">
+                        <Button text="Decline" onAction="#handleDecline"/>
+                        <Button fx:id="continueBtn" text="Agree &amp; Continue →" onAction="#handleContinue" defaultButton="true" 
+                                disable="true"/>
+                    </HBox>
+                </VBox>
+                
+            </VBox>
+        </VBox>
+    </center>
+
+    <bottom>
+        <Label text="© 2026 PMS - All Rights Reserved" maxWidth="Infinity" alignment="CENTER" style="-fx-padding: 24;"/>
+    </bottom>
+
+</BorderPane>

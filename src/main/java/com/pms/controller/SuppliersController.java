@@ -147,6 +147,8 @@ public class SuppliersController {
             return null;
         });
 
+        com.pms.util.UIUtil.enableEnterToClick(dialog);
+
         dialog.showAndWait().ifPresent(s -> {
             try {
                 if (isEdit) {
@@ -176,6 +178,8 @@ public class SuppliersController {
         if (supplierTable.getScene() != null && supplierTable.getScene().getWindow() != null) {
             alert.initOwner(supplierTable.getScene().getWindow());
         }
+
+        com.pms.util.UIUtil.enableEnterToClick(alert);
 
         alert.showAndWait().ifPresent(res -> {
             if (res == ButtonType.OK) {

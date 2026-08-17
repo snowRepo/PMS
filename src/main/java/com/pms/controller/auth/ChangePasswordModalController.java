@@ -120,8 +120,11 @@ public class ChangePasswordModalController {
                     return;
                 }
                 if (newVal.length() == 1 && idx < fields.size() - 1) {
-                    fields.get(idx + 1).requestFocus();
-                }
+                        fields.get(idx + 1).requestFocus();
+                    } else if (newVal.length() == 1 && idx == fields.size() - 1) {
+                        // Last PIN digit filled — move focus to first password field
+                        newPassField.requestFocus();
+                    }
             });
 
             tf.setOnKeyPressed(e -> {

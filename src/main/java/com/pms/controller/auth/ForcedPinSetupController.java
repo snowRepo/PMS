@@ -34,6 +34,7 @@ public class ForcedPinSetupController {
 
     @FXML
     public void initialize() {
+        Navigator.setTitle("PIN Setup");
         buildPinRow(pinRow1, pin1Fields);
         buildPinRow(pinRow2, pin2Fields);
     }

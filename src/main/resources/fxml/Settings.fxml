@@ -109,6 +109,23 @@
                     </HBox>
                 </VBox>
 
+                <!-- Danger Zone (Admin only) -->
+                <VBox fx:id="dangerZonePanel" spacing="12"
+                      style="-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: #f87171; -fx-border-radius: 8; -fx-padding: 20;">
+                    <Label text="⚠  Danger Zone" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #b91c1c;"/>
+                    <Separator/>
+                    <Label text="These actions are irreversible. Wiped data cannot be restored unless a backup exists on the other side."
+                           style="-fx-text-fill: #71717a; -fx-font-size: 12px;" wrapText="true"/>
+                    <VBox spacing="4">
+                        <Label text="Data Reset" style="-fx-font-weight: bold; -fx-text-fill: #18181b;"/>
+                        <Label text="Wipe local data, cloud data, or both. Requires your password and PIN to proceed."
+                               style="-fx-text-fill: #71717a; -fx-font-size: 12px;" wrapText="true"/>
+                    </VBox>
+                    <HBox alignment="CENTER_RIGHT" style="-fx-padding: 4 0 0 0;">
+                        <Button text="Reset Data..." onAction="#handleOpenResetData"/>
+                    </HBox>
+                </VBox>
+
                 <!-- About Section -->
                 <VBox fx:id="aboutPanel" spacing="10" style="-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: #d4d4d8; -fx-border-radius: 8; -fx-padding: 20;" >
                     <Label text="About PMS" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #18181b;"/>

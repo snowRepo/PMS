@@ -57,6 +57,15 @@ public final class AppPrefs {
         }
     }
 
+    /** Wipes all preference rows. Used during a full system reset. */
+    public static void clearAll() {
+        try (Statement st = conn().createStatement()) {
+            st.execute("DELETE FROM app_prefs");
+        } catch (SQLException e) {
+            logger.error("AppPrefs.clearAll failed: {}", e.getMessage());
+        }
+    }
+
     // ── Typed convenience getters ─────────────────────────────────────────────
 
     public static boolean getBoolean(String key, boolean defaultValue) {

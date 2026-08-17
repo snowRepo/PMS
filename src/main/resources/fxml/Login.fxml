@@ -28,7 +28,7 @@
                 <Label fx:id="errorLabel" wrapText="true" managed="false" visible="false"/>
 
                 <VBox spacing="8">
-                    <Button fx:id="loginButton" text="Log In" onAction="#handleLogin" maxWidth="Infinity"/>
+                    <Button fx:id="loginButton" text="Log In" onAction="#handleLogin" maxWidth="Infinity" defaultButton="true"/>
                     <Button text="Forgot Password?" onAction="#handleForgotPassword" maxWidth="Infinity"/>
                 </VBox>
             </VBox>

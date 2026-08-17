@@ -213,6 +213,8 @@ public class CustomersController {
             return null;
         });
 
+        com.pms.util.UIUtil.enableEnterToClick(dialog);
+
         Optional<Customer> result = dialog.showAndWait();
 
         result.ifPresent(customer -> {
@@ -240,6 +242,8 @@ public class CustomersController {
         alert.setTitle("Delete Customer");
         alert.setHeaderText("Delete '" + c.getName() + "'?");
         alert.setContentText("Are you sure you want to permanently delete this customer?");
+        
+        com.pms.util.UIUtil.enableEnterToClick(alert);
         
         alert.showAndWait().ifPresent(res -> {
             if (res == ButtonType.OK) {
@@ -336,6 +340,7 @@ public class CustomersController {
         }).start();
 
         dialog.getDialogPane().setContent(salesTable);
+        com.pms.util.UIUtil.enableEnterToClick(dialog);
         dialog.showAndWait();
         Platform.runLater(customerTable::requestFocus);
     }

@@ -28,6 +28,7 @@ public class LoginController {
 
     @FXML
     public void initialize() {
+        Navigator.setTitle("Login");
         errorLabel.setVisible(false);
         errorLabel.setManaged(false);
         passwordField.setOnAction(e -> handleLogin());

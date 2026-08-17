@@ -45,6 +45,7 @@ public class DashboardController {
 
     @FXML
     public void initialize() {
+        Navigator.setTitle("PMS - Point of Sale");
         String role = Session.current().getRole();
         userLabel.setText(Session.current().getFullName());
         roleLabel.setText(role.toUpperCase());
@@ -62,6 +63,13 @@ public class DashboardController {
         }
         
         updateSyncStatus();
+        
+        javafx.animation.Timeline syncChecker = new javafx.animation.Timeline(
+            new javafx.animation.KeyFrame(javafx.util.Duration.seconds(3), e -> updateSyncStatus())
+        );
+        syncChecker.setCycleCount(javafx.animation.Animation.INDEFINITE);
+        syncChecker.play();
+
         navigateTo("DashboardMetrics", "Dashboard");
         
         if ("admin".equalsIgnoreCase(role)) {
@@ -162,7 +170,7 @@ public class DashboardController {
     private void updateSyncStatus() {
         if (SyncManager.getInstance().isCloudAvailable()) {
             syncStatusLabel.setText("● Online");
-            syncStatusLabel.setStyle("-fx-text-fill: #a6e3a1; -fx-font-size: 11px;");
+            syncStatusLabel.setStyle("-fx-text-fill: #10b981; -fx-font-size: 11px;");
         } else {
             syncStatusLabel.setText("● Offline");
             syncStatusLabel.setStyle("-fx-text-fill: #71717a; -fx-font-size: 11px;");

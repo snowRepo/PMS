@@ -251,6 +251,7 @@ public class SalesController {
 
         content.getChildren().addAll(headerBox, itemsTable, summaryBox);
         dialog.getDialogPane().setContent(content);
+        com.pms.util.UIUtil.enableEnterToClick(dialog);
         dialog.showAndWait();
         Platform.runLater(salesTable::requestFocus);
     }

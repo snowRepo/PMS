@@ -70,8 +70,8 @@ public final class DbConnectionBuilder {
             java.util.Properties props = new java.util.Properties();
             props.setProperty("user", user);
             props.setProperty("password", pass);
-            props.setProperty("loginTimeout", "5");
-            props.setProperty("connectTimeout", "5");
+            props.setProperty("loginTimeout", "15");
+            props.setProperty("connectTimeout", "15");
             try (java.sql.Connection conn = java.sql.DriverManager.getConnection(url, props)) {
                 return conn.isValid(3) ? null : "Connection established but is not valid.";
             }

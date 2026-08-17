@@ -175,6 +175,8 @@ public class DashboardMetricsController {
             dialog.setHeaderText("Expected cash in drawer: " + CurrencyUtil.format(expectedCash) + "\n\nAny discrepancy will be reported.");
             dialog.setContentText("Declare actual starting cash:");
             
+            com.pms.util.UIUtil.enableEnterToClick(dialog);
+            
             java.util.Optional<String> result = dialog.showAndWait();
             if (result.isPresent()) {
                 try {
@@ -284,6 +286,8 @@ public class DashboardMetricsController {
                 }
                 return null;
             });
+            
+            com.pms.util.UIUtil.enableEnterToClick(dialog);
             
             java.util.Optional<String> result = dialog.showAndWait();
             if (result.isPresent()) {

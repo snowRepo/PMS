@@ -28,6 +28,11 @@ public class RegisterController {
     private String pendingUserId; // set after createAdmin, used by PinSetupController
 
     @FXML
+    public void initialize() {
+        Navigator.setTitle("Admin Registration");
+    }
+
+    @FXML
     private void handleBack() {
         Navigator.navigateTo("/fxml/setup/DbSetup.fxml");
     }
@@ -74,6 +79,7 @@ public class RegisterController {
             modal.initModality(Modality.WINDOW_MODAL);
             modal.setTitle("Set Security PIN");
             Scene scene = new Scene(root);
+            com.pms.util.UIUtil.enableEnterToClick(scene);
             scene.getStylesheets().add(
                 getClass().getResource("/css/main.css").toExternalForm());
             modal.setScene(scene);

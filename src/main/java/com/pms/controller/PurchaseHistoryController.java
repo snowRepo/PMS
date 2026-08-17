@@ -116,6 +116,8 @@ public class PurchaseHistoryController {
             alert.initOwner(historyTable.getScene().getWindow());
         }
 
+        com.pms.util.UIUtil.enableEnterToClick(alert);
+
         alert.showAndWait().ifPresent(res -> {
             if (res == ButtonType.OK) {
                 try {
@@ -143,6 +145,8 @@ public class PurchaseHistoryController {
         if (historyTable.getScene() != null && historyTable.getScene().getWindow() != null) {
             alert.initOwner(historyTable.getScene().getWindow());
         }
+
+        com.pms.util.UIUtil.enableEnterToClick(alert);
 
         alert.showAndWait().ifPresent(res -> {
             if (res == ButtonType.OK) {
@@ -225,6 +229,7 @@ public class PurchaseHistoryController {
 
         content.getChildren().addAll(headerBox, notesBox, itemsTable, totalBox);
         dialog.getDialogPane().setContent(content);
+        com.pms.util.UIUtil.enableEnterToClick(dialog);
         dialog.showAndWait();
         Platform.runLater(historyTable::requestFocus);
     }

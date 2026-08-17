@@ -220,6 +220,7 @@ public class InventoryController {
             modal.initModality(Modality.WINDOW_MODAL);
             modal.setTitle(product == null ? "Add New Item" : "Edit Item");
             Scene scene = new Scene(root);
+            com.pms.util.UIUtil.enableEnterToClick(scene);
             scene.getStylesheets().add(getClass().getResource("/css/main.css").toExternalForm());
             modal.setScene(scene);
             modal.setResizable(false);
@@ -249,6 +250,7 @@ public class InventoryController {
         alert.setContentText("This will permanently remove the item from the active inventory list. Are you sure?");
         
         // Wait for user confirmation
+        com.pms.util.UIUtil.enableEnterToClick(alert);
         alert.showAndWait().ifPresent(res -> {
             if (res == ButtonType.OK) {
                 try {

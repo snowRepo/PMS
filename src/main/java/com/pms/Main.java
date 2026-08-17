@@ -49,8 +49,8 @@ public class Main extends Application {
         try {
             UserDAO userDAO = new UserDAO();
             if (!userDAO.hasAnyAdmin()) {
-                logger.info("No admin found — starting setup wizard.");
-                Navigator.navigateTo("/fxml/setup/DbSetup.fxml");
+                logger.info("No admin found — starting setup wizard at Welcome.");
+                Navigator.navigateTo("/fxml/setup/Welcome.fxml");
             } else {
                 Navigator.navigateTo("/fxml/Login.fxml");
             }
@@ -61,9 +61,8 @@ public class Main extends Application {
 
         // 6. Show window
         Scene scene = new Scene(root, 900, 600);
+        com.pms.util.UIUtil.enableEnterToClick(scene);
         scene.getStylesheets().add(getClass().getResource("/css/main.css").toExternalForm());
-
-        primaryStage.setTitle("PMS - Point of Sale");
         primaryStage.setScene(scene);
         primaryStage.setMinWidth(520);
         primaryStage.setMinHeight(460);

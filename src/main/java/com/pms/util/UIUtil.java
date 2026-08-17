@@ -8,6 +8,40 @@ import javafx.util.Callback;
 public class UIUtil {
 
     /**
+     * Globally enables pressing ENTER to fire the currently focused button on the given Scene.
+     * This overrides JavaFX's default behavior where ENTER only fires the default button.
+     */
+    public static void enableEnterToClick(javafx.scene.Scene scene) {
+        scene.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, event -> {
+            if (event.getCode() == javafx.scene.input.KeyCode.ENTER) {
+                javafx.scene.Node focusOwner = scene.getFocusOwner();
+                if (focusOwner instanceof javafx.scene.control.ButtonBase) {
+                    ((javafx.scene.control.ButtonBase) focusOwner).fire();
+                    event.consume();
+                }
+            }
+        });
+    }
+
+    /**
+     * Globally enables pressing ENTER to fire the currently focused button on a Dialog/Alert.
+     */
+    public static void enableEnterToClick(javafx.scene.control.Dialog<?> dialog) {
+        javafx.scene.control.DialogPane pane = dialog.getDialogPane();
+        pane.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, event -> {
+            if (event.getCode() == javafx.scene.input.KeyCode.ENTER) {
+                if (pane.getScene() != null) {
+                    javafx.scene.Node focusOwner = pane.getScene().getFocusOwner();
+                    if (focusOwner instanceof javafx.scene.control.ButtonBase) {
+                        ((javafx.scene.control.ButtonBase) focusOwner).fire();
+                        event.consume();
+                    }
+                }
+            }
+        });
+    }
+
+    /**
      * Applies a standard text-based cell factory to the given columns.
      * The factory will display the string representation of the item and attach a Tooltip
      * so that if the text is truncated in the column, the user can still hover to read the full text.

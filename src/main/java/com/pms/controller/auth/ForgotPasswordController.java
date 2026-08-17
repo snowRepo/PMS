@@ -44,6 +44,7 @@ public class ForgotPasswordController {
 
     @FXML
     public void initialize() {
+        Navigator.setTitle("Password Reset");
         buildPinRow();
     }
 
@@ -162,6 +163,7 @@ public class ForgotPasswordController {
                 if (neu.length() > 1) { tf.setText(String.valueOf(neu.charAt(neu.length()-1))); return; }
                 if (!neu.matches("[0-9]?")) { tf.setText(old); return; }
                 if (neu.length() == 1 && idx < pinFields.size() - 1) pinFields.get(idx + 1).requestFocus();
+                else if (neu.length() == 1 && idx == pinFields.size() - 1) handleStep2();
             });
             tf.setOnKeyPressed(e -> {
                 if (e.getCode().toString().equals("BACK_SPACE") && tf.getText().isEmpty() && idx > 0)

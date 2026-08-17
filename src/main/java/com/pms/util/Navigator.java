@@ -66,4 +66,10 @@ public final class Navigator {
     public static Stage getStage() {
         return primaryStage;
     }
+    
+    public static void setTitle(String title) {
+        if (primaryStage != null) {
+            primaryStage.setTitle(title);
+        }
+    }
 }

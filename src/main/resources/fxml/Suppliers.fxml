@@ -9,7 +9,10 @@
     <!-- Top Bar: Search and Add Button -->
     <top>
         <HBox spacing="16" alignment="CENTER_LEFT" style="-fx-padding: 20;">
-            <Label text="Suppliers" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #18181b;"/>
+            <VBox spacing="4">
+                <Label text="Suppliers" style="-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #18181b;"/>
+                <Label text="Manage supplier contact information and details." style="-fx-text-fill: #71717a;"/>
+            </VBox>
             
             <Region HBox.hgrow="ALWAYS"/>
             

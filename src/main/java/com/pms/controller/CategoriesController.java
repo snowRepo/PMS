@@ -187,6 +187,8 @@ public class CategoriesController {
             return null;
         });
 
+        com.pms.util.UIUtil.enableEnterToClick(dialog);
+
         Optional<Category> result = dialog.showAndWait();
 
         result.ifPresent(category -> {
@@ -216,6 +218,8 @@ public class CategoriesController {
         alert.setTitle("Delete Category");
         alert.setHeaderText("Delete '" + c.getName() + "'?");
         alert.setContentText("Are you sure you want to permanently delete this category?");
+        
+        com.pms.util.UIUtil.enableEnterToClick(alert);
         
         alert.showAndWait().ifPresent(res -> {
             if (res == ButtonType.OK) {
