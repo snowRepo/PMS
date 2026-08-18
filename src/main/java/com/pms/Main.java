@@ -8,6 +8,7 @@ import com.pms.util.Notifier;
 import com.pms.util.NotificationPane;
 import javafx.application.Application;
 import javafx.scene.Scene;
+import javafx.scene.image.Image;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
@@ -62,8 +63,51 @@ public class Main extends Application {
         // 6. Show window
         Scene scene = new Scene(root, 900, 600);
         com.pms.util.UIUtil.enableEnterToClick(scene);
+        com.pms.util.BarcodeScannerManager.getInstance().attachToScene(scene);
         scene.getStylesheets().add(getClass().getResource("/css/main.css").toExternalForm());
         primaryStage.setScene(scene);
+        
+        // ── Cross-platform icon rendering ────────────────────────────────────────
+        // Two dedicated icon sets are pre-generated:
+        //   icon_macos_NxN.png  — squircle-masked PNGs (transparent corners)
+        //                         matches native macOS Dock appearance exactly
+        //   icon_win_NxN.png    — square, solid-background PNGs
+        //                         matches Windows 10/11 & Linux taskbar appearance
+        String os = System.getProperty("os.name", "generic").toLowerCase(java.util.Locale.ENGLISH);
+        if (os.contains("mac") || os.contains("darwin")) {
+            // macOS: push the 1024-px squircle image to the Dock via AWT Taskbar.
+            // We deliberately skip stage.getIcons() — JavaFX would place a raw
+            // square icon in the title bar, which looks non-native on macOS.
+            try {
+                java.awt.Image dockIcon = javax.imageio.ImageIO.read(
+                        getClass().getResource("/images/icon_macos_1024x1024.png"));
+                if (java.awt.Taskbar.isTaskbarSupported()) {
+                    java.awt.Taskbar.getTaskbar().setIconImage(dockIcon);
+                    logger.info("macOS Dock icon set (squircle 1024 px Retina).");
+                }
+            } catch (Exception e) {
+                logger.warn("Failed to set macOS Dock icon", e);
+            }
+        } else {
+            // Windows & Linux: load the full square size ladder so the OS always
+            // picks the sharpest match — 16/32 for title bar, 48 for taskbar,
+            // 128/256 for jump-list / large icon view.
+            int[] sizes = {16, 32, 48, 64, 128, 256};
+            try {
+                for (int size : sizes) {
+                    java.io.InputStream is = getClass()
+                            .getResourceAsStream("/images/icon_win_" + size + "x" + size + ".png");
+                    if (is != null) {
+                        primaryStage.getIcons().add(new Image(is));
+                    }
+                }
+                logger.info("Window/taskbar icons loaded ({} sizes).", sizes.length);
+            } catch (Exception e) {
+                logger.warn("Failed to load application icons", e);
+            }
+        }
+        // ─────────────────────────────────────────────────────────────────────────
+
         primaryStage.setMinWidth(520);
         primaryStage.setMinHeight(460);
         primaryStage.centerOnScreen();

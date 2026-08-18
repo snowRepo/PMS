@@ -107,6 +107,28 @@ public class PosController {
             refField.setVisible(reqRef);
             refField.setManaged(reqRef);
         });
+
+        // Barcode Scanner Integration
+        com.pms.util.BarcodeScannerManager.getInstance().setListener(this::onBarcodeScanned);
+    }
+
+    private void onBarcodeScanned(String barcode) {
+        javafx.application.Platform.runLater(() -> {
+            try {
+                Product p = productDAO.findByBarcode(barcode);
+                if (p != null) {
+                    if (p.getStockQty() <= 0) {
+                        Notifier.warning("Cannot add '" + p.getName() + "'. Out of stock.");
+                    } else {
+                        addToCart(p);
+                    }
+                } else {
+                    Notifier.error("Product with barcode '" + barcode + "' not found.");
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     private void renderProductCards(List<Product> products) {

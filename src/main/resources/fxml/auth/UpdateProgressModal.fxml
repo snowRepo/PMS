@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
+
+<VBox spacing="15" alignment="CENTER" stylesheets="@../../css/main.css" 
+      xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.pms.controller.auth.UpdateProgressController">
+      
+    <padding>
+        <Insets top="30" right="30" bottom="30" left="30"/>
+    </padding>
+
+    <Label text="Downloading Update..." />
+    
+    <Label fx:id="statusLabel" text="Starting download..." />
+    
+    <ProgressBar fx:id="progressBar" prefWidth="300" prefHeight="20" progress="0.0" />
+    
+    <Label fx:id="bytesLabel" text="0 MB / 0 MB" />
+    
+    <HBox alignment="CENTER" spacing="10">
+        <Button fx:id="btnCancel" text="Cancel" onAction="#handleCancel"/>
+        <Button fx:id="btnInstall" text="Close &amp; Install" onAction="#handleInstall" visible="false" managed="false" defaultButton="true"/>
+    </HBox>
+</VBox>

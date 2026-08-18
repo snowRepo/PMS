@@ -88,6 +88,28 @@ public class ProductFormController {
                 });
             }
         });
+
+        // Barcode Scanner Integration
+        com.pms.util.BarcodeScannerManager.getInstance().setListener(this::onBarcodeScanned);
+    }
+
+    private void onBarcodeScanned(String barcode) {
+        Platform.runLater(() -> {
+            String currentBarcode = barcodeField.getText();
+            if (currentBarcode != null && currentBarcode.equals(barcode)) {
+                // Same product scanned while editing, bump stock
+                try {
+                    int qty = stockField.getText().isEmpty() ? 0 : Integer.parseInt(stockField.getText());
+                    stockField.setText(String.valueOf(qty + 1));
+                    com.pms.util.Notifier.success("Quantity +1");
+                } catch (NumberFormatException e) {
+                    stockField.setText("1");
+                }
+            } else {
+                // Different product or empty barcode field
+                barcodeField.setText(barcode);
+            }
+        });
     }
 
     public void setProduct(Product product) {

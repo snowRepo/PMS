@@ -55,6 +55,28 @@ public class InventoryController {
         
         // Initial load
         refreshData();
+
+        // Barcode Scanner Integration
+        com.pms.util.BarcodeScannerManager.getInstance().setListener(this::onBarcodeScanned);
+    }
+
+    private void onBarcodeScanned(String barcode) {
+        javafx.application.Platform.runLater(() -> {
+            try {
+                Product p = productDAO.findByBarcode(barcode);
+                if (p != null) {
+                    // Scenario A: Product exists, no modal open -> Open edit modal
+                    openProductForm(p);
+                } else {
+                    // Scenario C: Product doesn't exist -> Open new modal and pre-fill
+                    Product newP = new Product();
+                    newP.setBarcode(barcode);
+                    openProductForm(newP);
+                }
+            } catch (Exception e) {
+                logger.error("Barcode scan error on inventory", e);
+            }
+        });
     }
 
     private void setupTableColumns() {
@@ -226,6 +248,9 @@ public class InventoryController {
             modal.setResizable(false);
             
             modal.showAndWait();
+
+            // Re-claim the barcode listener after the modal closes
+            com.pms.util.BarcodeScannerManager.getInstance().setListener(this::onBarcodeScanned);
 
             // Refresh table if changes were saved
             if (ctrl.isSaved()) {

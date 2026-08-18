@@ -378,7 +378,60 @@ public class SettingsController {
 
     @FXML
     public void handleCheckUpdates() {
-        Notifier.info("You are using the latest version of PMS.");
+        Notifier.info("Checking for updates...");
+        
+        new Thread(() -> {
+            try {
+                com.pms.util.UpdateManager.UpdateInfo info = com.pms.util.UpdateManager.checkForUpdates();
+                
+                javafx.application.Platform.runLater(() -> {
+                    if (info != null) {
+                        javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.CONFIRMATION);
+                        alert.setTitle("Update Available");
+                        alert.setHeaderText("Version " + info.version + " is available!");
+                        alert.setContentText("Would you like to download and install this update now?");
+                        
+                        com.pms.util.UIUtil.enableEnterToClick(alert);
+                        
+                        if (alert.showAndWait().orElse(javafx.scene.control.ButtonType.CANCEL) == javafx.scene.control.ButtonType.OK) {
+                            openUpdateProgressModal(info);
+                        }
+                    } else {
+                        Notifier.success("You are using the latest version of PMS.");
+                    }
+                });
+
+            } catch (Exception e) {
+                logger.error("Failed to check for updates", e);
+                javafx.application.Platform.runLater(() -> {
+                    Notifier.error("Update check failed. Ensure you are connected to the internet.");
+                });
+            }
+        }, "Update-Check-Thread").start();
+    }
+
+    private void openUpdateProgressModal(com.pms.util.UpdateManager.UpdateInfo info) {
+        try {
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("/fxml/auth/UpdateProgressModal.fxml"));
+            javafx.scene.Parent root = loader.load();
+            
+            com.pms.controller.auth.UpdateProgressController ctrl = loader.getController();
+            ctrl.setUpdateInfo(info);
+            
+            javafx.stage.Stage modal = new javafx.stage.Stage();
+            modal.initOwner(com.pms.util.Navigator.getStage());
+            modal.initModality(javafx.stage.Modality.WINDOW_MODAL);
+            modal.setTitle("Downloading Update");
+            javafx.scene.Scene scene = new javafx.scene.Scene(root);
+            com.pms.util.UIUtil.enableEnterToClick(scene);
+            modal.setScene(scene);
+            modal.setResizable(false);
+            
+            modal.show();
+        } catch (Exception e) {
+            logger.error("Failed to open update progress modal", e);
+            Notifier.error("Failed to start download.");
+        }
     }
 
     @FXML
