@@ -108,8 +108,8 @@ public class PosController {
             refField.setManaged(reqRef);
         });
 
-        // Barcode Scanner Integration
-        com.pms.util.BarcodeScannerManager.getInstance().setListener(this::onBarcodeScanned);
+        // Barcode Scanner Integration — push this screen's listener onto the stack
+        com.pms.util.BarcodeScannerManager.getInstance().pushListener(this::onBarcodeScanned);
     }
 
     private void onBarcodeScanned(String barcode) {

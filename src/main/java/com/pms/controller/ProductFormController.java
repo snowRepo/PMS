@@ -89,8 +89,9 @@ public class ProductFormController {
             }
         });
 
-        // Barcode Scanner Integration
-        com.pms.util.BarcodeScannerManager.getInstance().setListener(this::onBarcodeScanned);
+        // Barcode Scanner Integration — push this modal's listener onto the stack.
+        // When this modal closes, popListener() restores the parent screen's listener.
+        com.pms.util.BarcodeScannerManager.getInstance().pushListener(this::onBarcodeScanned);
     }
 
     private void onBarcodeScanned(String barcode) {
@@ -211,6 +212,8 @@ public class ProductFormController {
     }
 
     private void closeModal() {
+        // Pop this modal's barcode listener — parent screen resumes automatically
+        com.pms.util.BarcodeScannerManager.getInstance().popListener();
         Stage stage = (Stage) nameField.getScene().getWindow();
         stage.close();
     }

@@ -56,8 +56,8 @@ public class InventoryController {
         // Initial load
         refreshData();
 
-        // Barcode Scanner Integration
-        com.pms.util.BarcodeScannerManager.getInstance().setListener(this::onBarcodeScanned);
+        // Barcode Scanner Integration — push this screen's listener onto the stack
+        com.pms.util.BarcodeScannerManager.getInstance().pushListener(this::onBarcodeScanned);
     }
 
     private void onBarcodeScanned(String barcode) {
@@ -249,8 +249,8 @@ public class InventoryController {
             
             modal.showAndWait();
 
-            // Re-claim the barcode listener after the modal closes
-            com.pms.util.BarcodeScannerManager.getInstance().setListener(this::onBarcodeScanned);
+            // Listener stack automatically restores InventoryController's listener
+            // when ProductFormController calls popListener() on close.
 
             // Refresh table if changes were saved
             if (ctrl.isSaved()) {

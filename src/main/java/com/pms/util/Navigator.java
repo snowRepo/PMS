@@ -33,6 +33,8 @@ public final class Navigator {
     /** Load and display the given FXML in the main content area. */
     public static void navigateTo(String fxmlPath) {
         try {
+            // Clear stale barcode listeners from the outgoing screen
+            BarcodeScannerManager.getInstance().clearAllListeners();
             Node view = FXMLLoader.load(Navigator.class.getResource(fxmlPath));
             contentPane.getChildren().setAll(view);
         } catch (Exception e) {
@@ -52,6 +54,8 @@ public final class Navigator {
     @SuppressWarnings("unchecked")
     public static <T> T navigateToWithController(String fxmlPath) {
         try {
+            // Clear stale barcode listeners from the outgoing screen
+            BarcodeScannerManager.getInstance().clearAllListeners();
             FXMLLoader loader = new FXMLLoader(Navigator.class.getResource(fxmlPath));
             Node view = loader.load();
             contentPane.getChildren().setAll(view);
