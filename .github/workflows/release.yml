@@ -141,10 +141,8 @@ jobs:
 
           tar -xzf /tmp/liberica-intel.tar.gz -C /tmp/
 
-          # Liberica macOS tar.gz extracts as a macOS .jdk bundle:
-          #   /tmp/bellsoft-jdk17.0.12+10-macos-amd64/Contents/Home/bin/java
-          # Use a wildcard glob — safer than hardcoding the full versioned path.
-          INTEL_HOME=$(ls -d /tmp/bellsoft-jdk*-macos-amd64/Contents/Home 2>/dev/null | head -1)
+          # CI output confirms extraction lands at: /tmp/jdk-17.0.12-full.jdk/Contents/Home/
+          INTEL_HOME=$(ls -d /tmp/*.jdk/Contents/Home 2>/dev/null | head -1)
 
           if [ -z "$INTEL_HOME" ]; then
             echo "ERROR: Intel JDK home not found. Listing /tmp/ for diagnosis:"
