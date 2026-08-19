@@ -127,9 +127,10 @@ jobs:
       # ── Intel (x86_64 via Rosetta 2) ─────────────────────────────────────
       - name: Download Liberica Intel JDK 17 + JavaFX
         run: |
-          # Liberica JDK for macOS Intel — full variant includes JavaFX jmods.
-          # The + in the version must be URL-encoded as %2B for the download URL,
-          # but stays as a literal + in the local directory name after extraction.
+          # The runner image already has a Liberica JDK at /tmp/jdk-17.0.12-full.jdk (ARM).
+          # We extract the Intel JDK into its OWN directory to avoid any collision.
+          # --strip-components=1 removes the top-level folder from the tar so bin/, lib/,
+          # etc. land directly inside /tmp/intel-jdk/ (Liberica on macOS is flat, no Contents/Home).
           LIBERICA_VER="17.0.12+10"
           LIBERICA_VER_URL="17.0.12%2B10"
           LIBERICA_FILE="bellsoft-jdk${LIBERICA_VER}-macos-amd64-full.tar.gz"
@@ -139,20 +140,15 @@ jobs:
             "https://download.bell-sw.com/java/${LIBERICA_VER_URL}/${LIBERICA_FILE}" \
             -o /tmp/liberica-intel.tar.gz
 
-          tar -xzf /tmp/liberica-intel.tar.gz -C /tmp/
+          mkdir -p /tmp/intel-jdk
+          tar -xzf /tmp/liberica-intel.tar.gz -C /tmp/intel-jdk --strip-components=1
 
-          # CI output confirms extraction lands at: /tmp/jdk-17.0.12-full.jdk/Contents/Home/
-          INTEL_HOME=$(ls -d /tmp/*.jdk/Contents/Home 2>/dev/null | head -1)
-
-          if [ -z "$INTEL_HOME" ]; then
-            echo "ERROR: Intel JDK home not found. Listing /tmp/ for diagnosis:"
-            ls -la /tmp/
-            exit 1
-          fi
-
+          INTEL_HOME="/tmp/intel-jdk"
           echo "INTEL_JAVA_HOME=$INTEL_HOME" >> "$GITHUB_ENV"
           echo "Intel JDK located at: $INTEL_HOME"
-          "$INTEL_HOME/bin/java" -version
+          # Confirm this is genuinely x86_64 (runs via Rosetta 2 on the ARM runner)
+          arch -x86_64 "$INTEL_HOME/bin/java" -version
+
 
 
       - name: Package — macOS Intel DMG (via Rosetta 2)
