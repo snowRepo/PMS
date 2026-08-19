@@ -55,7 +55,7 @@ jobs:
 
   # ── macOS — Apple Silicon (aarch64) ─────────────────────────────────────
   build-macos-arm:
-    name: 🍎 macOS (Apple Silicon)
+    name: macOS (Apple Silicon)
     runs-on: macos-14
 
     steps:
@@ -128,7 +128,7 @@ jobs:
 
   # ── macOS — Intel (x86_64) ───────────────────────────────────────────────
   build-macos-intel:
-    name: 🍎 macOS (Intel x86_64)
+    name: macOS (Intel x86_64)
     runs-on: macos-13
 
     steps:
@@ -199,7 +199,7 @@ jobs:
 
   # ── Windows (x86_64) ─────────────────────────────────────────────────────
   build-windows:
-    name: 🪟 Windows (x86_64)
+    name: Windows (x86_64)
     runs-on: windows-latest
 
     steps:
@@ -278,7 +278,7 @@ jobs:
 
   # ── Linux — Debian/Ubuntu (x86_64) ───────────────────────────────────────
   build-linux:
-    name: 🐧 Linux (x86_64 — Debian/Ubuntu)
+    name: Linux (x86_64 - Debian/Ubuntu)
     runs-on: ubuntu-22.04
 
     steps:
@@ -338,7 +338,7 @@ jobs:
 
   # ── Create GitHub Release ─────────────────────────────────────────────────
   create-release:
-    name: 🚀 Create GitHub Release
+    name: Create GitHub Release
     needs: [build-macos-arm, build-macos-intel, build-windows, build-linux]
     runs-on: ubuntu-latest
     permissions:
