@@ -373,10 +373,10 @@ jobs:
 
           | Platform | File |
           |---|---|
-          | 🍎 macOS — Apple Silicon (M1 / M2 / M3) | \`PMS-1.0.0-macos-arm64.dmg\` |
-          | 🍎 macOS — Intel (x86_64) | \`PMS-1.0.0-macos-intel.dmg\` |
-          | 🪟 Windows 8+ (64-bit) | \`PMS-1.0.0-windows-x64.msi\` |
-          | 🐧 Linux — Debian / Ubuntu (x86_64) | \`PMS-1.0.0-linux-x64.deb\` |
+          | macOS — Apple Silicon (M1 / M2 / M3) | \`PMS-1.0.0-macos-arm64.dmg\` |
+          | macOS — Intel (x86_64) | \`PMS-1.0.0-macos-intel.dmg\` |
+          | Windows 8+ (64-bit) | \`PMS-1.0.0-windows-x64.msi\` |
+          | Linux — Debian / Ubuntu (x86_64) | \`PMS-1.0.0-linux-x64.deb\` |
 
           ---
 
