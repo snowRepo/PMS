@@ -127,19 +127,35 @@ jobs:
       # ── Intel (x86_64 via Rosetta 2) ─────────────────────────────────────
       - name: Download Liberica Intel JDK 17 + JavaFX
         run: |
-          # Pull the full (JavaFX-included) Liberica JDK for macOS Intel.
-          # This runs under Rosetta 2 on the ARM runner to produce a genuine Intel binary.
+          # Liberica JDK for macOS Intel — full variant includes JavaFX jmods.
+          # The + in the version must be URL-encoded as %2B for the download URL,
+          # but stays as a literal + in the local directory name after extraction.
           LIBERICA_VER="17.0.12+10"
+          LIBERICA_VER_URL="17.0.12%2B10"
           LIBERICA_FILE="bellsoft-jdk${LIBERICA_VER}-macos-amd64-full.tar.gz"
+
+          echo "Downloading $LIBERICA_FILE..."
           curl -fsSL \
-            "https://download.bell-sw.com/java/${LIBERICA_VER}/${LIBERICA_FILE}" \
+            "https://download.bell-sw.com/java/${LIBERICA_VER_URL}/${LIBERICA_FILE}" \
             -o /tmp/liberica-intel.tar.gz
+
           tar -xzf /tmp/liberica-intel.tar.gz -C /tmp/
-          # Locate JAVA_HOME inside the extracted bundle
-          INTEL_HOME=$(find /tmp -maxdepth 3 -name "jpackage" -type f 2>/dev/null | head -1 | sed 's|/bin/jpackage||')
+
+          # Liberica macOS tar.gz extracts as a macOS .jdk bundle:
+          #   /tmp/bellsoft-jdk17.0.12+10-macos-amd64/Contents/Home/bin/java
+          # Use a wildcard glob — safer than hardcoding the full versioned path.
+          INTEL_HOME=$(ls -d /tmp/bellsoft-jdk*-macos-amd64/Contents/Home 2>/dev/null | head -1)
+
+          if [ -z "$INTEL_HOME" ]; then
+            echo "ERROR: Intel JDK home not found. Listing /tmp/ for diagnosis:"
+            ls -la /tmp/
+            exit 1
+          fi
+
           echo "INTEL_JAVA_HOME=$INTEL_HOME" >> "$GITHUB_ENV"
-          echo "Intel JDK home: $INTEL_HOME"
+          echo "Intel JDK located at: $INTEL_HOME"
           "$INTEL_HOME/bin/java" -version
+
 
       - name: Package — macOS Intel DMG (via Rosetta 2)
         run: |
