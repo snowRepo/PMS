@@ -53,16 +53,23 @@ env:
 
 jobs:
 
-  # ── macOS — Apple Silicon (aarch64) ─────────────────────────────────────
-  build-macos-arm:
-    name: macOS (Apple Silicon)
+  # ── macOS — ARM + Intel (both built on macos-14 via Rosetta 2) ────────────
+  #
+  # Why one runner for two architectures?
+  #   GitHub's macos-13 (Intel) runners have chronic availability issues.
+  #   Apple Silicon Macs ship with Rosetta 2, so "arch -x86_64 <cmd>" runs any
+  #   Intel binary natively on an M-series chip.  We download Liberica's Intel
+  #   JDK, then call its jpackage under arch -x86_64 to produce a genuine
+  #   Intel DMG — no macos-13 runner needed.
+  build-macos:
+    name: macOS (ARM + Intel)
     runs-on: macos-14
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Liberica JDK 17 + JavaFX (ARM)
+      - name: Setup Liberica JDK 17 + JavaFX (ARM — used for Maven build)
         uses: actions/setup-java@v4
         with:
           java-version: '17'
@@ -70,14 +77,13 @@ jobs:
           java-package: 'jdk+fx'
           cache: 'maven'
 
-      - name: Build fat JAR (JavaFX excluded — comes from bundled runtime)
+      - name: Build fat JAR (JavaFX excluded — bundled via jpackage runtime)
         run: mvn package -DskipTests --no-transfer-progress
 
       - name: Generate .icns icon
         run: |
           SRC="src/main/resources/images/icon_macos_1024x1024.png"
           mkdir -p AppIcon.iconset
-          # Each standard size + its @2x (Retina) counterpart
           sips -z 16   16   "$SRC" --out "AppIcon.iconset/icon_16x16.png"       -s format png
           sips -z 32   32   "$SRC" --out "AppIcon.iconset/icon_16x16@2x.png"    -s format png
           sips -z 32   32   "$SRC" --out "AppIcon.iconset/icon_32x32.png"       -s format png
@@ -90,11 +96,11 @@ jobs:
           sips -z 1024 1024 "$SRC" --out "AppIcon.iconset/icon_512x512@2x.png"  -s format png
           iconutil -c icns AppIcon.iconset -o pms.icns
 
+      # ── ARM (Apple Silicon) ──────────────────────────────────────────────
       - name: Package — macOS ARM DMG
         run: |
-          mkdir -p dist/input dist/output
-          cp "target/${{ env.MAIN_JAR }}" dist/input/
-          # Collapse the multi-line ADD_MODULES env var to a single comma-separated string
+          mkdir -p dist/arm/input dist/arm/output
+          cp "target/${{ env.MAIN_JAR }}" dist/arm/input/
           MODULES=$(echo "${{ env.ADD_MODULES }}" | tr -d '\n ' | sed 's/,,*/,/g')
 
           jpackage \
@@ -103,7 +109,7 @@ jobs:
             --app-version      "${{ env.APP_VERSION }}" \
             --vendor           "${{ env.VENDOR }}" \
             --description      "Product Management System" \
-            --input            dist/input \
+            --input            dist/arm/input \
             --main-jar         "${{ env.MAIN_JAR }}" \
             --main-class       "${{ env.MAIN_CLASS }}" \
             --icon             pms.icns \
@@ -113,87 +119,69 @@ jobs:
             --java-options     "--add-opens java.base/java.util=ALL-UNNAMED" \
             --java-options     "-Xms256m -Xmx768m" \
             --mac-app-category "public.app-category.business" \
-            --dest             dist/output
+            --dest             dist/arm/output
 
-          mv "dist/output/${{ env.APP_NAME }}-${{ env.APP_VERSION }}.dmg" \
-             "dist/output/${{ env.APP_NAME }}-${{ env.APP_VERSION }}-macos-arm64.dmg"
+          mv "dist/arm/output/${{ env.APP_NAME }}-${{ env.APP_VERSION }}.dmg" \
+             "dist/arm/output/${{ env.APP_NAME }}-${{ env.APP_VERSION }}-macos-arm64.dmg"
 
-      - name: Upload artifact
+      # ── Intel (x86_64 via Rosetta 2) ─────────────────────────────────────
+      - name: Download Liberica Intel JDK 17 + JavaFX
+        run: |
+          # Pull the full (JavaFX-included) Liberica JDK for macOS Intel.
+          # This runs under Rosetta 2 on the ARM runner to produce a genuine Intel binary.
+          LIBERICA_VER="17.0.12+10"
+          LIBERICA_FILE="bellsoft-jdk${LIBERICA_VER}-macos-amd64-full.tar.gz"
+          curl -fsSL \
+            "https://download.bell-sw.com/java/${LIBERICA_VER}/${LIBERICA_FILE}" \
+            -o /tmp/liberica-intel.tar.gz
+          tar -xzf /tmp/liberica-intel.tar.gz -C /tmp/
+          # Locate JAVA_HOME inside the extracted bundle
+          INTEL_HOME=$(find /tmp -maxdepth 3 -name "jpackage" -type f 2>/dev/null | head -1 | sed 's|/bin/jpackage||')
+          echo "INTEL_JAVA_HOME=$INTEL_HOME" >> "$GITHUB_ENV"
+          echo "Intel JDK home: $INTEL_HOME"
+          "$INTEL_HOME/bin/java" -version
+
+      - name: Package — macOS Intel DMG (via Rosetta 2)
+        run: |
+          mkdir -p dist/intel/input dist/intel/output
+          cp "target/${{ env.MAIN_JAR }}" dist/intel/input/
+          MODULES=$(echo "${{ env.ADD_MODULES }}" | tr -d '\n ' | sed 's/,,*/,/g')
+
+          # arch -x86_64: instructs macOS to run the process in Intel (x86_64) mode
+          # via Rosetta 2.  jpackage then creates an Intel-native .app + DMG.
+          arch -x86_64 "$INTEL_JAVA_HOME/bin/jpackage" \
+            --type dmg \
+            --name             "${{ env.APP_NAME }}" \
+            --app-version      "${{ env.APP_VERSION }}" \
+            --vendor           "${{ env.VENDOR }}" \
+            --description      "Product Management System" \
+            --input            dist/intel/input \
+            --main-jar         "${{ env.MAIN_JAR }}" \
+            --main-class       "${{ env.MAIN_CLASS }}" \
+            --icon             pms.icns \
+            --add-modules      "$MODULES" \
+            --java-options     "--add-modules javafx.controls,javafx.fxml,javafx.graphics,javafx.base" \
+            --java-options     "--add-opens java.base/java.lang=ALL-UNNAMED" \
+            --java-options     "--add-opens java.base/java.util=ALL-UNNAMED" \
+            --java-options     "-Xms256m -Xmx768m" \
+            --mac-app-category "public.app-category.business" \
+            --dest             dist/intel/output
+
+          mv "dist/intel/output/${{ env.APP_NAME }}-${{ env.APP_VERSION }}.dmg" \
+             "dist/intel/output/${{ env.APP_NAME }}-${{ env.APP_VERSION }}-macos-intel.dmg"
+
+      - name: Upload ARM artifact
         uses: actions/upload-artifact@v4
         with:
           name: PMS-macos-arm64
-          path: dist/output/PMS-1.0.0-macos-arm64.dmg
+          path: dist/arm/output/PMS-1.0.0-macos-arm64.dmg
           retention-days: 7
 
-
-  # ── macOS — Intel (x86_64) ───────────────────────────────────────────────
-  build-macos-intel:
-    name: macOS (Intel x86_64)
-    runs-on: macos-13
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Liberica JDK 17 + JavaFX (Intel)
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'liberica'
-          java-package: 'jdk+fx'
-          cache: 'maven'
-
-      - name: Build fat JAR
-        run: mvn package -DskipTests --no-transfer-progress
-
-      - name: Generate .icns icon
-        run: |
-          SRC="src/main/resources/images/icon_macos_1024x1024.png"
-          mkdir -p AppIcon.iconset
-          sips -z 16   16   "$SRC" --out "AppIcon.iconset/icon_16x16.png"       -s format png
-          sips -z 32   32   "$SRC" --out "AppIcon.iconset/icon_16x16@2x.png"    -s format png
-          sips -z 32   32   "$SRC" --out "AppIcon.iconset/icon_32x32.png"       -s format png
-          sips -z 64   64   "$SRC" --out "AppIcon.iconset/icon_32x32@2x.png"    -s format png
-          sips -z 128  128  "$SRC" --out "AppIcon.iconset/icon_128x128.png"     -s format png
-          sips -z 256  256  "$SRC" --out "AppIcon.iconset/icon_128x128@2x.png"  -s format png
-          sips -z 256  256  "$SRC" --out "AppIcon.iconset/icon_256x256.png"     -s format png
-          sips -z 512  512  "$SRC" --out "AppIcon.iconset/icon_256x256@2x.png"  -s format png
-          sips -z 512  512  "$SRC" --out "AppIcon.iconset/icon_512x512.png"     -s format png
-          sips -z 1024 1024 "$SRC" --out "AppIcon.iconset/icon_512x512@2x.png"  -s format png
-          iconutil -c icns AppIcon.iconset -o pms.icns
-
-      - name: Package — macOS Intel DMG
-        run: |
-          mkdir -p dist/input dist/output
-          cp "target/${{ env.MAIN_JAR }}" dist/input/
-          MODULES=$(echo "${{ env.ADD_MODULES }}" | tr -d '\n ' | sed 's/,,*/,/g')
-
-          jpackage \
-            --type dmg \
-            --name             "${{ env.APP_NAME }}" \
-            --app-version      "${{ env.APP_VERSION }}" \
-            --vendor           "${{ env.VENDOR }}" \
-            --description      "Product Management System" \
-            --input            dist/input \
-            --main-jar         "${{ env.MAIN_JAR }}" \
-            --main-class       "${{ env.MAIN_CLASS }}" \
-            --icon             pms.icns \
-            --add-modules      "$MODULES" \
-            --java-options     "--add-modules javafx.controls,javafx.fxml,javafx.graphics,javafx.base" \
-            --java-options     "--add-opens java.base/java.lang=ALL-UNNAMED" \
-            --java-options     "--add-opens java.base/java.util=ALL-UNNAMED" \
-            --java-options     "-Xms256m -Xmx768m" \
-            --mac-app-category "public.app-category.business" \
-            --dest             dist/output
-
-          mv "dist/output/${{ env.APP_NAME }}-${{ env.APP_VERSION }}.dmg" \
-             "dist/output/${{ env.APP_NAME }}-${{ env.APP_VERSION }}-macos-intel.dmg"
-
-      - name: Upload artifact
+      - name: Upload Intel artifact
         uses: actions/upload-artifact@v4
         with:
           name: PMS-macos-intel
-          path: dist/output/PMS-1.0.0-macos-intel.dmg
+          path: dist/intel/output/PMS-1.0.0-macos-intel.dmg
           retention-days: 7
 
 
@@ -339,7 +327,7 @@ jobs:
   # ── Create GitHub Release ─────────────────────────────────────────────────
   create-release:
     name: Create GitHub Release
-    needs: [build-macos-arm, build-macos-intel, build-windows, build-linux]
+    needs: [build-macos, build-windows, build-linux]
     runs-on: ubuntu-latest
     permissions:
       contents: write   # required to create releases and upload assets
