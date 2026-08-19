@@ -7,7 +7,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.pms</groupId>
     <artifactId>PMS</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.0</version>
     <packaging>jar</packaging>
     <name>PMS</name>
     <description>Cross-platform Pharmacy Management System</description>
@@ -142,12 +142,25 @@
                                 </transformer>
                             </transformers>
                             <filters>
+                                <!-- Strip signature files that break the fat JAR -->
                                 <filter>
                                     <artifact>*:*</artifact>
                                     <excludes>
                                         <exclude>META-INF/*.SF</exclude>
                                         <exclude>META-INF/*.DSA</exclude>
                                         <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                                <!--
+                                  Exclude JavaFX from the fat JAR.
+                                  jpackage bundles JavaFX via the Liberica JDK runtime
+                                  using add-modules javafx.*. Including it in the shade
+                                  would create a classpath/module conflict at runtime.
+                                -->
+                                <filter>
+                                    <artifact>org.openjfx:*</artifact>
+                                    <excludes>
+                                        <exclude>**</exclude>
                                     </excludes>
                                 </filter>
                             </filters>

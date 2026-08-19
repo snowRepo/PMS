@@ -1,0 +1,420 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# PMS — Build & Release Pipeline
+#
+# Triggers:
+#   • Push a tag matching vX.Y.Z  →  full build + GitHub Release created
+#   • workflow_dispatch           →  manual trigger for smoke-testing
+#
+# Architecture:
+#   macOS ARM   (macos-14,  Apple Silicon M1/M2/M3) → .dmg
+#   macOS Intel (macos-13,  x86_64)                 → .dmg
+#   Windows     (windows-latest, x86_64)            → .msi
+#   Linux       (ubuntu-22.04,   x86_64)            → .deb
+#
+# Runtime bundling strategy:
+#   Each job installs Liberica JDK 17 + JavaFX (jdk+fx).
+#   Liberica includes JavaFX as native JDK modules (jmods), which jpackage /
+#   jlink uses to create a self-contained runtime — no Java needed by end users.
+#   The fat JAR (built by maven-shade-plugin) deliberately excludes JavaFX so
+#   it doesn't conflict with the module-path JavaFX in the bundled runtime.
+#
+# Minimum OS requirements:
+#   macOS  → 10.13 High Sierra+   (JDK 17 minimum)
+#   Windows → 8 / 8.1+            (JDK 17 minimum)
+#   Linux  → Ubuntu 18.04+        (glibc 2.17+)
+#
+# Publisher: DevApps
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+
+# ── Shared constants ──────────────────────────────────────────────────────────
+env:
+  APP_NAME:    PMS
+  APP_VERSION: "1.0.0"
+  VENDOR:      DevApps
+  MAIN_CLASS:  com.pms.Main
+  MAIN_JAR:    PMS-1.0.0.jar
+  # Full module list for jlink (included in bundled runtime) + javafx.*
+  # Non-JavaFX modules cover: AWT/Taskbar, JDBC, HikariCP, logback, SSL/TLS,
+  # locale formatting, and reflection-heavy libraries (jdk.unsupported).
+  ADD_MODULES: >-
+    java.base,java.desktop,java.logging,java.management,java.management.rmi,
+    java.naming,java.net.http,java.prefs,java.rmi,java.security.jgss,
+    java.security.sasl,java.sql,java.transaction.xa,java.xml,
+    jdk.crypto.cryptoki,jdk.crypto.ec,jdk.localedata,jdk.unsupported,
+    javafx.base,javafx.controls,javafx.fxml,javafx.graphics
+
+jobs:
+
+  # ── macOS — Apple Silicon (aarch64) ─────────────────────────────────────
+  build-macos-arm:
+    name: 🍎 macOS (Apple Silicon)
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Liberica JDK 17 + JavaFX (ARM)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'liberica'
+          java-package: 'jdk+fx'
+          cache: 'maven'
+
+      - name: Build fat JAR (JavaFX excluded — comes from bundled runtime)
+        run: mvn package -DskipTests --no-transfer-progress
+
+      - name: Generate .icns icon
+        run: |
+          SRC="src/main/resources/images/icon_macos_1024x1024.png"
+          mkdir -p AppIcon.iconset
+          # Each standard size + its @2x (Retina) counterpart
+          sips -z 16   16   "$SRC" --out "AppIcon.iconset/icon_16x16.png"       -s format png
+          sips -z 32   32   "$SRC" --out "AppIcon.iconset/icon_16x16@2x.png"    -s format png
+          sips -z 32   32   "$SRC" --out "AppIcon.iconset/icon_32x32.png"       -s format png
+          sips -z 64   64   "$SRC" --out "AppIcon.iconset/icon_32x32@2x.png"    -s format png
+          sips -z 128  128  "$SRC" --out "AppIcon.iconset/icon_128x128.png"     -s format png
+          sips -z 256  256  "$SRC" --out "AppIcon.iconset/icon_128x128@2x.png"  -s format png
+          sips -z 256  256  "$SRC" --out "AppIcon.iconset/icon_256x256.png"     -s format png
+          sips -z 512  512  "$SRC" --out "AppIcon.iconset/icon_256x256@2x.png"  -s format png
+          sips -z 512  512  "$SRC" --out "AppIcon.iconset/icon_512x512.png"     -s format png
+          sips -z 1024 1024 "$SRC" --out "AppIcon.iconset/icon_512x512@2x.png"  -s format png
+          iconutil -c icns AppIcon.iconset -o pms.icns
+
+      - name: Package — macOS ARM DMG
+        run: |
+          mkdir -p dist/input dist/output
+          cp "target/${{ env.MAIN_JAR }}" dist/input/
+          # Collapse the multi-line ADD_MODULES env var to a single comma-separated string
+          MODULES=$(echo "${{ env.ADD_MODULES }}" | tr -d '\n ' | sed 's/,,*/,/g')
+
+          jpackage \
+            --type dmg \
+            --name             "${{ env.APP_NAME }}" \
+            --app-version      "${{ env.APP_VERSION }}" \
+            --vendor           "${{ env.VENDOR }}" \
+            --description      "Product Management System" \
+            --input            dist/input \
+            --main-jar         "${{ env.MAIN_JAR }}" \
+            --main-class       "${{ env.MAIN_CLASS }}" \
+            --icon             pms.icns \
+            --add-modules      "$MODULES" \
+            --java-options     "--add-modules javafx.controls,javafx.fxml,javafx.graphics,javafx.base" \
+            --java-options     "--add-opens java.base/java.lang=ALL-UNNAMED" \
+            --java-options     "--add-opens java.base/java.util=ALL-UNNAMED" \
+            --java-options     "-Xms256m -Xmx768m" \
+            --mac-app-category "public.app-category.business" \
+            --dest             dist/output
+
+          mv "dist/output/${{ env.APP_NAME }}-${{ env.APP_VERSION }}.dmg" \
+             "dist/output/${{ env.APP_NAME }}-${{ env.APP_VERSION }}-macos-arm64.dmg"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PMS-macos-arm64
+          path: dist/output/PMS-1.0.0-macos-arm64.dmg
+          retention-days: 7
+
+
+  # ── macOS — Intel (x86_64) ───────────────────────────────────────────────
+  build-macos-intel:
+    name: 🍎 macOS (Intel x86_64)
+    runs-on: macos-13
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Liberica JDK 17 + JavaFX (Intel)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'liberica'
+          java-package: 'jdk+fx'
+          cache: 'maven'
+
+      - name: Build fat JAR
+        run: mvn package -DskipTests --no-transfer-progress
+
+      - name: Generate .icns icon
+        run: |
+          SRC="src/main/resources/images/icon_macos_1024x1024.png"
+          mkdir -p AppIcon.iconset
+          sips -z 16   16   "$SRC" --out "AppIcon.iconset/icon_16x16.png"       -s format png
+          sips -z 32   32   "$SRC" --out "AppIcon.iconset/icon_16x16@2x.png"    -s format png
+          sips -z 32   32   "$SRC" --out "AppIcon.iconset/icon_32x32.png"       -s format png
+          sips -z 64   64   "$SRC" --out "AppIcon.iconset/icon_32x32@2x.png"    -s format png
+          sips -z 128  128  "$SRC" --out "AppIcon.iconset/icon_128x128.png"     -s format png
+          sips -z 256  256  "$SRC" --out "AppIcon.iconset/icon_128x128@2x.png"  -s format png
+          sips -z 256  256  "$SRC" --out "AppIcon.iconset/icon_256x256.png"     -s format png
+          sips -z 512  512  "$SRC" --out "AppIcon.iconset/icon_256x256@2x.png"  -s format png
+          sips -z 512  512  "$SRC" --out "AppIcon.iconset/icon_512x512.png"     -s format png
+          sips -z 1024 1024 "$SRC" --out "AppIcon.iconset/icon_512x512@2x.png"  -s format png
+          iconutil -c icns AppIcon.iconset -o pms.icns
+
+      - name: Package — macOS Intel DMG
+        run: |
+          mkdir -p dist/input dist/output
+          cp "target/${{ env.MAIN_JAR }}" dist/input/
+          MODULES=$(echo "${{ env.ADD_MODULES }}" | tr -d '\n ' | sed 's/,,*/,/g')
+
+          jpackage \
+            --type dmg \
+            --name             "${{ env.APP_NAME }}" \
+            --app-version      "${{ env.APP_VERSION }}" \
+            --vendor           "${{ env.VENDOR }}" \
+            --description      "Product Management System" \
+            --input            dist/input \
+            --main-jar         "${{ env.MAIN_JAR }}" \
+            --main-class       "${{ env.MAIN_CLASS }}" \
+            --icon             pms.icns \
+            --add-modules      "$MODULES" \
+            --java-options     "--add-modules javafx.controls,javafx.fxml,javafx.graphics,javafx.base" \
+            --java-options     "--add-opens java.base/java.lang=ALL-UNNAMED" \
+            --java-options     "--add-opens java.base/java.util=ALL-UNNAMED" \
+            --java-options     "-Xms256m -Xmx768m" \
+            --mac-app-category "public.app-category.business" \
+            --dest             dist/output
+
+          mv "dist/output/${{ env.APP_NAME }}-${{ env.APP_VERSION }}.dmg" \
+             "dist/output/${{ env.APP_NAME }}-${{ env.APP_VERSION }}-macos-intel.dmg"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PMS-macos-intel
+          path: dist/output/PMS-1.0.0-macos-intel.dmg
+          retention-days: 7
+
+
+  # ── Windows (x86_64) ─────────────────────────────────────────────────────
+  build-windows:
+    name: 🪟 Windows (x86_64)
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Liberica JDK 17 + JavaFX
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'liberica'
+          java-package: 'jdk+fx'
+          cache: 'maven'
+
+      - name: Build fat JAR
+        run: mvn package -DskipTests --no-transfer-progress
+
+      - name: Generate .ico icon
+        shell: pwsh
+        run: |
+          # ImageMagick (magick) is pre-installed on GitHub Actions Windows runners.
+          # Build a multi-resolution .ico from the pre-generated Windows icon PNGs.
+          $files = @(
+            "src/main/resources/images/icon_win_256x256.png",
+            "src/main/resources/images/icon_win_128x128.png",
+            "src/main/resources/images/icon_win_64x64.png",
+            "src/main/resources/images/icon_win_48x48.png",
+            "src/main/resources/images/icon_win_32x32.png",
+            "src/main/resources/images/icon_win_16x16.png"
+          ) | Where-Object { Test-Path $_ }
+          magick @files pms.ico
+          Write-Host "Generated pms.ico from $($files.Count) sizes."
+
+      - name: Package — Windows MSI
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist/input, dist/output | Out-Null
+          Copy-Item "target/$env:MAIN_JAR" dist/input/
+
+          $MODULES = ($env:ADD_MODULES -replace '\s+', '') -replace ',+', ','
+
+          # --win-upgrade-uuid: fixed UUID so future MSI upgrades replace this version.
+          # Do NOT change this UUID between releases (or Windows treats it as a new app).
+          jpackage `
+            --type             msi `
+            --name             $env:APP_NAME `
+            --app-version      $env:APP_VERSION `
+            --vendor           $env:VENDOR `
+            --description      "Product Management System" `
+            --input            dist/input `
+            --main-jar         $env:MAIN_JAR `
+            --main-class       $env:MAIN_CLASS `
+            --icon             pms.ico `
+            --add-modules      $MODULES `
+            --java-options     "--add-modules javafx.controls,javafx.fxml,javafx.graphics,javafx.base" `
+            --java-options     "--add-opens java.base/java.lang=ALL-UNNAMED" `
+            --java-options     "--add-opens java.base/java.util=ALL-UNNAMED" `
+            --java-options     "-Xms256m -Xmx768m" `
+            --win-shortcut `
+            --win-menu `
+            --win-menu-group   $env:VENDOR `
+            --win-upgrade-uuid "e8c2f4b1-7a3d-4e5f-9b6c-1d2e3f4a5b6c" `
+            --dest             dist/output
+
+          Rename-Item `
+            "dist/output/$($env:APP_NAME)-$($env:APP_VERSION).msi" `
+            "$($env:APP_NAME)-$($env:APP_VERSION)-windows-x64.msi"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PMS-windows-x64
+          path: dist/output/PMS-1.0.0-windows-x64.msi
+          retention-days: 7
+
+
+  # ── Linux — Debian/Ubuntu (x86_64) ───────────────────────────────────────
+  build-linux:
+    name: 🐧 Linux (x86_64 — Debian/Ubuntu)
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Liberica JDK 17 + JavaFX
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'liberica'
+          java-package: 'jdk+fx'
+          cache: 'maven'
+
+      - name: Install DEB packaging tools
+        run: sudo apt-get install -y --no-install-recommends fakeroot binutils
+
+      - name: Build fat JAR
+        run: mvn package -DskipTests --no-transfer-progress
+
+      - name: Package — Linux DEB
+        run: |
+          mkdir -p dist/input dist/output
+          cp "target/${{ env.MAIN_JAR }}" dist/input/
+          MODULES=$(echo "${{ env.ADD_MODULES }}" | tr -d '\n ' | sed 's/,,*/,/g')
+
+          jpackage \
+            --type           deb \
+            --name           "pms" \
+            --app-version    "${{ env.APP_VERSION }}" \
+            --vendor         "${{ env.VENDOR }}" \
+            --description    "Product Management System" \
+            --input          dist/input \
+            --main-jar       "${{ env.MAIN_JAR }}" \
+            --main-class     "${{ env.MAIN_CLASS }}" \
+            --icon           src/main/resources/images/icon_macos_1024x1024.png \
+            --add-modules    "$MODULES" \
+            --java-options   "--add-modules javafx.controls,javafx.fxml,javafx.graphics,javafx.base" \
+            --java-options   "--add-opens java.base/java.lang=ALL-UNNAMED" \
+            --java-options   "--add-opens java.base/java.util=ALL-UNNAMED" \
+            --java-options   "-Xms256m -Xmx768m" \
+            --linux-app-category "Office" \
+            --linux-shortcut \
+            --dest           dist/output
+
+          # Normalise the DEB filename (jpackage uses lowercase name + version)
+          DEB=$(ls dist/output/*.deb | head -1)
+          mv "$DEB" "dist/output/${{ env.APP_NAME }}-${{ env.APP_VERSION }}-linux-x64.deb"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PMS-linux-x64
+          path: dist/output/PMS-1.0.0-linux-x64.deb
+          retention-days: 7
+
+
+  # ── Create GitHub Release ─────────────────────────────────────────────────
+  create-release:
+    name: 🚀 Create GitHub Release
+    needs: [build-macos-arm, build-macos-intel, build-windows, build-linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # required to create releases and upload assets
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all platform artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release/
+          merge-multiple: true
+
+      - name: Verify artifacts
+        run: |
+          echo "── Release artifacts ──────────────────────────"
+          ls -lah release/
+          echo "───────────────────────────────────────────────"
+
+      - name: Write release notes
+        run: |
+          TAG="${{ github.ref_name }}"
+          cat > release_notes.md << EOF
+          ## PMS ${TAG}
+
+          First public release of PMS — Product Management System.
+          Bundled runtime included: **no Java installation required**.
+
+          ---
+
+          ### Platform Downloads
+
+          | Platform | File |
+          |---|---|
+          | 🍎 macOS — Apple Silicon (M1 / M2 / M3) | \`PMS-1.0.0-macos-arm64.dmg\` |
+          | 🍎 macOS — Intel (x86_64) | \`PMS-1.0.0-macos-intel.dmg\` |
+          | 🪟 Windows 8+ (64-bit) | \`PMS-1.0.0-windows-x64.msi\` |
+          | 🐧 Linux — Debian / Ubuntu (x86_64) | \`PMS-1.0.0-linux-x64.deb\` |
+
+          ---
+
+          ### First-launch instructions
+
+          **macOS**: After downloading, right-click \`PMS.app\` → **Open**.
+          Confirm in the dialog. This is only needed the first time (Gatekeeper —
+          app is unsigned for this release).
+
+          **Windows**: If SmartScreen appears, click **More info** → **Run anyway**
+          (app is unsigned for this release).
+
+          **Linux**:
+          \`\`\`bash
+          sudo dpkg -i PMS-1.0.0-linux-x64.deb
+          \`\`\`
+
+          ---
+
+          ### Minimum requirements
+
+          | Platform | Minimum Version |
+          |---|---|
+          | macOS | 10.13 High Sierra |
+          | Windows | 8 / 8.1 |
+          | Linux | Ubuntu 18.04 (glibc 2.17+) |
+          EOF
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            --title "PMS ${{ github.ref_name }}" \
+            --notes-file release_notes.md \
+            release/PMS-1.0.0-macos-arm64.dmg \
+            release/PMS-1.0.0-macos-intel.dmg \
+            release/PMS-1.0.0-windows-x64.msi \
+            release/PMS-1.0.0-linux-x64.deb

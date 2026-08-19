@@ -84,3 +84,6 @@ Icon
 
 # Antigravity IDE Artifacts
 .gemini/
+
+# jpackage build output
+dist/
