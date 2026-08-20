@@ -18,8 +18,22 @@ public class DatabaseConfig {
 
     private static final Logger logger = LoggerFactory.getLogger(DatabaseConfig.class);
 
-    // ─── Local SQLite ─────────────────────────────────────────────────────────
-    private static final String LOCAL_JDBC = "jdbc:sqlite:database/pms_local.db";
+    private static String getAppDataDir() {
+        String os = System.getProperty("os.name").toLowerCase();
+        if (os.contains("win")) {
+            return System.getenv("APPDATA") + "\\PMS";
+        } else if (os.contains("mac")) {
+            return System.getProperty("user.home") + "/Library/Application Support/PMS";
+        } else {
+            return System.getProperty("user.home") + "/.pms";
+        }
+    }
+
+    private static final String APP_DATA_DIR = getAppDataDir();
+    private static final String DB_DIR = APP_DATA_DIR + java.io.File.separator + "database";
+    private static final String DB_FILE = DB_DIR + java.io.File.separator + "pms_local.db";
+    private static final String LOCAL_JDBC = "jdbc:sqlite:" + DB_FILE;
+    
     private static Connection localConnection;
 
     // ─── Remote pool ─────────────────────────────────────────────────────────
@@ -32,8 +46,12 @@ public class DatabaseConfig {
 
     public static void initLocal() {
         try {
+            java.io.File dir = new java.io.File(DB_DIR);
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
             localConnection = DriverManager.getConnection(LOCAL_JDBC);
-            logger.info("Local SQLite connected.");
+            logger.info("Local SQLite connected at {}", DB_FILE);
             createLocalSchema();
             runMigrations();
         } catch (SQLException e) {

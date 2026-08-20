@@ -259,6 +259,7 @@ jobs:
             --win-shortcut `
             --win-menu `
             --win-menu-group   $env:VENDOR `
+            --win-dir-chooser `
             --win-upgrade-uuid "e8c2f4b1-7a3d-4e5f-9b6c-1d2e3f4a5b6c" `
             --dest             dist/output
 
