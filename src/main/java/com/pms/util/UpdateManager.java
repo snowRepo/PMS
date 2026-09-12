@@ -19,7 +19,7 @@ public class UpdateManager {
     private static final String GITHUB_OWNER = "snowRepo";
     private static final String GITHUB_REPO = "PMS";
     
-    public static final String CURRENT_VERSION = "v1.0.0";
+    public static final String CURRENT_VERSION = "v1.0.1";
     
     public static class UpdateInfo {
         public String version;
@@ -64,7 +64,7 @@ public class UpdateManager {
 
             // Find the correct asset for this OS
             String os = System.getProperty("os.name").toLowerCase();
-            String targetExtension = os.contains("win") ? ".exe" : (os.contains("mac") ? ".dmg" : ".deb");
+            String targetExtension = os.contains("win") ? ".msi" : (os.contains("mac") ? ".dmg" : ".deb");
             
             JsonArray assets = release.getAsJsonArray("assets");
             for (JsonElement element : assets) {

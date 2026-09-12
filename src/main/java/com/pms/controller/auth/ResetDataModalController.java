@@ -166,9 +166,17 @@ public class ResetDataModalController {
                 }
 
                 if (finalCloud) {
-                    Platform.runLater(() -> progressLabel.setText("Wiping cloud data..."));
-                    DatabaseConfig.wipeRemoteData();
-                    logger.info("Cloud database wiped by admin: {}", user.getUsername());
+                    if (DatabaseConfig.isCloudAvailable()) {
+                        Platform.runLater(() -> progressLabel.setText("Wiping cloud data..."));
+                        DatabaseConfig.wipeRemoteData();
+                        logger.info("Cloud database wiped by admin: {}", user.getUsername());
+                    } else if (!fullReset) {
+                        // Cloud-only wipe but cloud is not connected — surface the error
+                        throw new RuntimeException("Cloud is not connected. Cannot wipe cloud data.");
+                    } else {
+                        // Full reset offline — cloud wipe is skipped, local will be fully cleared
+                        logger.warn("Full reset: cloud unavailable — skipping remote wipe.");
+                    }
                 }
 
                 if (finalLocal) {
@@ -176,7 +184,7 @@ public class ResetDataModalController {
                     // Keep users ONLY if this is not a full system reset
                     DatabaseConfig.resetLocalData(!fullReset);
                     logger.info("Local database wiped by admin: {}", user.getUsername());
-                    
+
                     if (!finalCloud && DatabaseConfig.isCloudAvailable()) {
                         Platform.runLater(() -> progressLabel.setText("Restoring data from cloud..."));
                         com.pms.sync.SyncManager.getInstance().syncCycle();
@@ -185,10 +193,9 @@ public class ResetDataModalController {
 
                 if (fullReset) {
                     Platform.runLater(() -> progressLabel.setText("Clearing preferences..."));
-                    if (DatabaseConfig.isCloudAvailable()) {
-                        DatabaseConfig.closeAll();
-                        DatabaseConfig.initLocal();
-                    }
+                    // Always close and reinitialise local — works whether cloud was available or not
+                    DatabaseConfig.closeAll();
+                    DatabaseConfig.initLocal();
                     AppPrefs.clearAll();
                 }
 
