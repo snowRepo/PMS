@@ -37,10 +37,10 @@ on:
 # ── Shared constants ──────────────────────────────────────────────────────────
 env:
   APP_NAME:    PMS
-  APP_VERSION: "1.0.3"
+  APP_VERSION: "1.0.4"
   VENDOR:      DevApps
   MAIN_CLASS:  com.pms.Main
-  MAIN_JAR:    PMS-1.0.3.jar
+  MAIN_JAR:    PMS-1.0.4.jar
   # Full module list for jlink (included in bundled runtime) + javafx.*
   # Non-JavaFX modules cover: AWT/Taskbar, JDBC, HikariCP, logback, SSL/TLS,
   # locale formatting, and reflection-heavy libraries (jdk.unsupported).
@@ -133,6 +133,15 @@ jobs:
           /usr/libexec/PlistBuddy -c "Add :LSMinimumSystemVersion string 10.13" "$PLIST" 2>/dev/null \
             || /usr/libexec/PlistBuddy -c "Set :LSMinimumSystemVersion 10.13" "$PLIST"
 
+          # Step 2b: Re-apply the ad-hoc code signature.
+          # jpackage signs the .app with an ad-hoc signature (--sign -) when it
+          # creates the app-image. Modifying Info.plist with PlistBuddy invalidates
+          # that signature, causing macOS Gatekeeper to report the app as "damaged"
+          # instead of "unidentified developer". Re-signing restores a valid ad-hoc
+          # signature so the app can be launched (via right-click > Open).
+          codesign --force --deep --sign - \
+            "dist/arm/app/${{ env.APP_NAME }}.app"
+
           # Step 3: Wrap the patched .app into a DMG.
           # --icon here sets the DMG volume icon (the mounted disk on the desktop
           # and the Finder drag-window title bar). Without it, jpackage falls back
@@ -218,6 +227,10 @@ jobs:
           PLIST="dist/intel/app/${{ env.APP_NAME }}.app/Contents/Info.plist"
           /usr/libexec/PlistBuddy -c "Add :LSMinimumSystemVersion string 10.13" "$PLIST" 2>/dev/null \
             || /usr/libexec/PlistBuddy -c "Set :LSMinimumSystemVersion 10.13" "$PLIST"
+
+          # Step 2b: Re-apply the ad-hoc code signature (same reason as ARM above).
+          arch -x86_64 codesign --force --deep --sign - \
+            "dist/intel/app/${{ env.APP_NAME }}.app"
 
           # Step 3: Wrap the patched .app into a DMG.
           # Same as ARM — --icon sets the volume icon for the mounted DMG.
