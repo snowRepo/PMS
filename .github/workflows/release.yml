@@ -99,27 +99,17 @@ jobs:
       # ── ARM (Apple Silicon) ──────────────────────────────────────────────
       - name: Package — macOS ARM DMG
         run: |
-          mkdir -p dist/arm/input dist/arm/output
+          mkdir -p dist/arm/input dist/arm/app dist/arm/output
           cp "target/${{ env.MAIN_JAR }}" dist/arm/input/
           MODULES=$(echo "${{ env.ADD_MODULES }}" | tr -d '\n ' | sed 's/,,*/,/g')
 
-          # Inject a custom Info.plist to force LSMinimumSystemVersion=10.13.
-          # jpackage on macos-14 silently defaults to 12.0 (Monterey) for ARM
-          # builds, which broke compatibility with older macOS versions.
-          mkdir -p dist/arm/res
-          cat > dist/arm/res/Info.plist << 'PLIST'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-              <key>LSMinimumSystemVersion</key>
-              <string>10.13</string>
-          </dict>
-          </plist>
-          PLIST
-
+          # Step 1: Build the .app bundle (app-image).
+          # We do NOT use --resource-dir here — doing so with a custom Info.plist
+          # causes jpackage to completely replace its generated plist, which strips
+          # CFBundleIconFile and makes macOS (especially High Sierra) fall back to
+          # the generic document icon in the DMG drag window.
           jpackage \
-            --type dmg \
+            --type app-image \
             --name             "${{ env.APP_NAME }}" \
             --app-version      "${{ env.APP_VERSION }}" \
             --vendor           "${{ env.VENDOR }}" \
@@ -134,8 +124,22 @@ jobs:
             --java-options     "--add-opens java.base/java.util=ALL-UNNAMED" \
             --java-options     "-Xms256m -Xmx768m" \
             --mac-app-category "public.app-category.business" \
-            --resource-dir     dist/arm/res \
-            --dest             dist/arm/output
+            --dest             dist/arm/app
+
+          # Step 2: Inject LSMinimumSystemVersion into the generated Info.plist.
+          # PlistBuddy adds the key without touching any other keys (CFBundleIconFile,
+          # CFBundleIdentifier, CFBundleExecutable, etc.) so the icon stays intact.
+          PLIST="dist/arm/app/${{ env.APP_NAME }}.app/Contents/Info.plist"
+          /usr/libexec/PlistBuddy -c "Add :LSMinimumSystemVersion string 10.13" "$PLIST" 2>/dev/null \
+            || /usr/libexec/PlistBuddy -c "Set :LSMinimumSystemVersion 10.13" "$PLIST"
+
+          # Step 3: Wrap the patched .app into a DMG.
+          jpackage \
+            --type dmg \
+            --name        "${{ env.APP_NAME }}" \
+            --app-version "${{ env.APP_VERSION }}" \
+            --app-image   "dist/arm/app/${{ env.APP_NAME }}.app" \
+            --dest        dist/arm/output
 
           mv "dist/arm/output/${{ env.APP_NAME }}-${{ env.APP_VERSION }}.dmg" \
              "dist/arm/output/${{ env.APP_NAME }}-${{ env.APP_VERSION }}-macos-arm64.dmg"
@@ -169,7 +173,7 @@ jobs:
 
       - name: Package — macOS Intel DMG (via Rosetta 2)
         run: |
-          mkdir -p dist/intel/input dist/intel/output
+          mkdir -p dist/intel/input dist/intel/app dist/intel/output
           cp "target/${{ env.MAIN_JAR }}" dist/intel/input/
           MODULES=$(echo "${{ env.ADD_MODULES }}" | tr -d '\n ' | sed 's/,,*/,/g')
 
@@ -186,24 +190,10 @@ jobs:
             --no-man-pages \
             --compress=1
 
-          # Inject a custom Info.plist to force LSMinimumSystemVersion=10.13.
-          mkdir -p dist/intel/res
-          cat > dist/intel/res/Info.plist << 'PLIST'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-              <key>LSMinimumSystemVersion</key>
-              <string>10.13</string>
-          </dict>
-          </plist>
-          PLIST
-
-          # arch -x86_64: runs jpackage in Intel mode via Rosetta 2.
-          # --runtime-image: explicitly bundles the Intel jlink runtime above,
-          #   preventing jpackage from picking up the ARM JDK from JAVA_HOME.
+          # Step 1: Build the Intel .app bundle (app-image).
+          # Same rationale as ARM — no --resource-dir to avoid plist replacement.
           arch -x86_64 "$INTEL_JAVA_HOME/bin/jpackage" \
-            --type dmg \
+            --type app-image \
             --name             "${{ env.APP_NAME }}" \
             --app-version      "${{ env.APP_VERSION }}" \
             --vendor           "${{ env.VENDOR }}" \
@@ -218,8 +208,20 @@ jobs:
             --java-options     "--add-opens java.base/java.util=ALL-UNNAMED" \
             --java-options     "-Xms256m -Xmx768m" \
             --mac-app-category "public.app-category.business" \
-            --resource-dir     dist/intel/res \
-            --dest             dist/intel/output
+            --dest             dist/intel/app
+
+          # Step 2: Inject LSMinimumSystemVersion without replacing the plist.
+          PLIST="dist/intel/app/${{ env.APP_NAME }}.app/Contents/Info.plist"
+          /usr/libexec/PlistBuddy -c "Add :LSMinimumSystemVersion string 10.13" "$PLIST" 2>/dev/null \
+            || /usr/libexec/PlistBuddy -c "Set :LSMinimumSystemVersion 10.13" "$PLIST"
+
+          # Step 3: Wrap the patched .app into a DMG.
+          arch -x86_64 "$INTEL_JAVA_HOME/bin/jpackage" \
+            --type dmg \
+            --name        "${{ env.APP_NAME }}" \
+            --app-version "${{ env.APP_VERSION }}" \
+            --app-image   "dist/intel/app/${{ env.APP_NAME }}.app" \
+            --dest        dist/intel/output
 
           mv "dist/intel/output/${{ env.APP_NAME }}-${{ env.APP_VERSION }}.dmg" \
              "dist/intel/output/${{ env.APP_NAME }}-${{ env.APP_VERSION }}-macos-intel.dmg"
