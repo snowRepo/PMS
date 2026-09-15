@@ -37,10 +37,10 @@ on:
 # ── Shared constants ──────────────────────────────────────────────────────────
 env:
   APP_NAME:    PMS
-  APP_VERSION: "1.0.4"
+  APP_VERSION: "1.0.5"
   VENDOR:      DevApps
   MAIN_CLASS:  com.pms.Main
-  MAIN_JAR:    PMS-1.0.4.jar
+  MAIN_JAR:    PMS-1.0.5.jar
   # Full module list for jlink (included in bundled runtime) + javafx.*
   # Non-JavaFX modules cover: AWT/Taskbar, JDBC, HikariCP, logback, SSL/TLS,
   # locale formatting, and reflection-heavy libraries (jdk.unsupported).

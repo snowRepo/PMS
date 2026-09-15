@@ -3,6 +3,7 @@ package com.pms.controller.setup;
 import com.pms.config.DatabaseConfig;
 import com.pms.config.DbConnectionBuilder;
 import com.pms.dao.UserDAO;
+import com.pms.sync.SyncManager;
 import com.pms.util.AppPrefs;
 import com.pms.util.Navigator;
 import com.pms.util.Notifier;
@@ -18,19 +19,25 @@ public class DbSetupController {
 
     private static final Logger logger = LoggerFactory.getLogger(DbSetupController.class);
 
-    @FXML private ComboBox<String> dbTypeCombo;
-    @FXML private TextField  hostField;
-    @FXML private TextField  portField;
-    @FXML private TextField  dbNameField;
-    @FXML private TextField  userField;
-    @FXML private PasswordField passField;
-    @FXML private CheckBox   sslCheck;
-    @FXML private Label      statusLabel;
-    @FXML private Button     continueBtn;
+    @FXML private ComboBox<String>  dbTypeCombo;
+    @FXML private TextField         hostField;
+    @FXML private TextField         portField;
+    @FXML private TextField         dbNameField;
+    @FXML private TextField         userField;
+    @FXML private PasswordField     passField;
+    @FXML private CheckBox          sslCheck;
+    @FXML private Label             statusLabel;
+    @FXML private Button            continueBtn;
+    @FXML private Button            testBtn;
+    @FXML private Button            skipBtn;
+
+    // Progress UI — shown only during post-restore sync phase
+    @FXML private ProgressBar       syncProgressBar;
+    @FXML private Label             syncLabel;
 
     private boolean connectionVerified = false;
-    private boolean remoteHasAdmin = false;
-    private final UserDAO userDAO = new UserDAO();
+    private boolean remoteHasAdmin     = false;
+    private final UserDAO userDAO      = new UserDAO();
 
     @FXML
     public void initialize() {
@@ -105,7 +112,7 @@ public class DbSetupController {
                     connectionVerified = true;
                     remoteHasAdmin = finalHasAdmins;
                     continueBtn.setDisable(false);
-                    
+
                     if (remoteHasAdmin) {
                         showStatus("✓ Existing account found on this database.", true);
                         continueBtn.setText("Restore My Account →");
@@ -154,16 +161,39 @@ public class DbSetupController {
             Notifier.error("Could not activate database connection.");
             return;
         }
-        
+
         if (remoteHasAdmin) {
-            try {
-                userDAO.pullAllUsersFromRemote();
-                Notifier.success("Accounts restored successfully.");
-                Navigator.navigateTo("/fxml/Login.fxml");
-            } catch (Exception e) {
-                logger.error("Failed to restore users", e);
-                Notifier.error("Failed to restore accounts from remote database.");
-            }
+            // Lock the form so nothing can be clicked while restoring
+            setFormDisabled(true);
+            showSyncProgress("Restoring your accounts...");
+
+            new Thread(() -> {
+                try {
+                    // Step 1: pull users immediately so login credentials exist locally
+                    userDAO.pullAllUsersFromRemote();
+                    Platform.runLater(() -> updateSyncLabel("Syncing your data — please wait..."));
+
+                    // Step 2: pull all other tables (products, sales, customers, inventory…)
+                    // Running synchronously here means the user arrives at Login with all data ready.
+                    SyncManager.getInstance().syncCycle();
+
+                    Platform.runLater(() -> {
+                        updateSyncLabel("✓ Restore complete!");
+                        Notifier.success("Accounts and data restored successfully.");
+                        Navigator.navigateTo("/fxml/Login.fxml");
+                    });
+
+                } catch (Exception e) {
+                    logger.error("Failed to restore from remote", e);
+                    Platform.runLater(() -> {
+                        hideSyncProgress();
+                        setFormDisabled(false);
+                        showStatus("Restore failed: " + e.getMessage(), false);
+                        Notifier.error("Failed to restore data from remote database.");
+                    });
+                }
+            }, "DB-Restore-Thread").start();
+
         } else {
             Notifier.info("Database connected. Proceeding to admin setup...");
             Navigator.navigateTo("/fxml/setup/Register.fxml");
@@ -175,12 +205,45 @@ public class DbSetupController {
         Notifier.info("Skipping cloud database setup. You are running in local-only mode.");
         // Clear any previous cloud DB connection attempts from prefs
         AppPrefs.set("db_host", "");
-        
+
         // Proceed to admin setup
         Navigator.navigateTo("/fxml/setup/Register.fxml");
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /** Disables / re-enables all form controls during the restore+sync phase. */
+    private void setFormDisabled(boolean disabled) {
+        dbTypeCombo.setDisable(disabled);
+        hostField.setDisable(disabled);
+        portField.setDisable(disabled);
+        dbNameField.setDisable(disabled);
+        userField.setDisable(disabled);
+        passField.setDisable(disabled);
+        sslCheck.setDisable(disabled);
+        testBtn.setDisable(disabled);
+        skipBtn.setDisable(disabled);
+        continueBtn.setDisable(disabled);
+    }
+
+    private void showSyncProgress(String message) {
+        syncProgressBar.setVisible(true);
+        syncProgressBar.setManaged(true);
+        syncLabel.setText(message);
+        syncLabel.setVisible(true);
+        syncLabel.setManaged(true);
+    }
+
+    private void updateSyncLabel(String message) {
+        syncLabel.setText(message);
+    }
+
+    private void hideSyncProgress() {
+        syncProgressBar.setVisible(false);
+        syncProgressBar.setManaged(false);
+        syncLabel.setVisible(false);
+        syncLabel.setManaged(false);
+    }
 
     private void showStatus(String msg, Boolean success) {
         statusLabel.setText(msg);

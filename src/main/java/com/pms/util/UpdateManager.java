@@ -19,7 +19,7 @@ public class UpdateManager {
     private static final String GITHUB_OWNER = "snowRepo";
     private static final String GITHUB_REPO = "PMS";
     
-    public static final String CURRENT_VERSION = "v1.0.4";
+    public static final String CURRENT_VERSION = "v1.0.5";
     
     public static class UpdateInfo {
         public String version;

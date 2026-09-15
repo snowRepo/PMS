@@ -46,7 +46,7 @@
                     <Label fx:id="userLabel" text="User Name" style="-fx-text-fill: #18181b; -fx-font-weight: bold; -fx-font-size: 13px;"/>
                     <Label fx:id="roleLabel" text="ROLE" style="-fx-text-fill: #039ED3; -fx-font-size: 11px; -fx-font-weight: bold;"/>
                 </VBox>
-                <Label fx:id="syncStatusLabel" text="● Offline" style="-fx-text-fill: #71717a; -fx-font-size: 11px;"/>
+                <Label fx:id="syncStatusLabel" text="● Offline" wrapText="true" style="-fx-text-fill: #71717a; -fx-font-size: 11px;"/>
                 
                 <HBox spacing="8">
                     <Button text="Sync Now" onAction="#handleSync" HBox.hgrow="ALWAYS" maxWidth="Infinity" style="-fx-font-size: 11px;"/>

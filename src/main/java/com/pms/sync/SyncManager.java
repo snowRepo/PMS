@@ -1,11 +1,16 @@
 package com.pms.sync;
 
 import com.pms.config.DatabaseConfig;
+import javafx.application.Platform;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -34,7 +39,19 @@ public class SyncManager {
 
     private volatile boolean running = false;
 
+    /**
+     * Human-readable last sync time, e.g. "Last sync: 11:42 PM".
+     * Updated on the JavaFX thread after every successful pull cycle.
+     * DashboardController binds the sidebar label to this property.
+     */
+    private final StringProperty lastSyncText = new SimpleStringProperty("Never synced");
+
     private SyncManager() {}
+
+    /** Observable last-sync label — bind sidebar UI directly to this. */
+    public StringProperty lastSyncTextProperty() {
+        return lastSyncText;
+    }
 
     public static SyncManager getInstance() {
         return INSTANCE;
@@ -225,7 +242,14 @@ public class SyncManager {
             }
         }
 
-        saveLastSyncTimestamp(local, Instant.now().toString());
+        Instant now = Instant.now();
+        saveLastSyncTimestamp(local, now.toString());
+
+        // Update the observable property so the sidebar label refreshes automatically
+        String formatted = DateTimeFormatter.ofPattern("h:mm a")
+                .withZone(ZoneId.systemDefault())
+                .format(now);
+        Platform.runLater(() -> lastSyncText.set("Last sync: " + formatted));
     }
 
     private void pullTable(Connection local, Connection cloud, String table, String since) throws SQLException {

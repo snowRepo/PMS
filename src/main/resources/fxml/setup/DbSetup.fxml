@@ -47,10 +47,15 @@
 
                 <Label fx:id="statusLabel" wrapText="true" managed="false" visible="false"/>
 
+                <!-- Shown only during post-restore sync — hidden otherwise -->
+                <ProgressBar fx:id="syncProgressBar" progress="-1" prefWidth="400" prefHeight="10"
+                             managed="false" visible="false"/>
+                <Label fx:id="syncLabel" wrapText="true" managed="false" visible="false"/>
+
                 <HBox spacing="10">
-                    <Button text="Test Connection" onAction="#handleTest" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                    <Button text="Skip (Local Only)" onAction="#handleSkip" HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
-                    <Button fx:id="continueBtn" text="Continue →" onAction="#handleContinue" HBox.hgrow="ALWAYS" maxWidth="Infinity" disable="true"/>
+                    <Button fx:id="testBtn"     text="Test Connection"   onAction="#handleTest"     HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                    <Button fx:id="skipBtn"     text="Skip (Local Only)" onAction="#handleSkip"     HBox.hgrow="ALWAYS" maxWidth="Infinity"/>
+                    <Button fx:id="continueBtn" text="Continue →"        onAction="#handleContinue" HBox.hgrow="ALWAYS" maxWidth="Infinity" disable="true"/>
                 </HBox>
             </VBox>
         </VBox>

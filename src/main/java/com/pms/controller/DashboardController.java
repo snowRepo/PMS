@@ -63,7 +63,14 @@ public class DashboardController {
         }
         
         updateSyncStatus();
-        
+
+        // Bind the sidebar sync label text to SyncManager's observable last-sync property.
+        // When online: "● Online — Last sync: 11:42 PM"
+        // When offline: "● Offline" (set directly in updateSyncStatus)
+        SyncManager.getInstance().lastSyncTextProperty().addListener(
+            (obs, oldVal, newVal) -> updateSyncStatus()
+        );
+
         javafx.animation.Timeline syncChecker = new javafx.animation.Timeline(
             new javafx.animation.KeyFrame(javafx.util.Duration.seconds(3), e -> updateSyncStatus())
         );
@@ -71,7 +78,7 @@ public class DashboardController {
         syncChecker.play();
 
         navigateTo("DashboardMetrics", "Dashboard");
-        
+
         if ("admin".equalsIgnoreCase(role)) {
             startBadgePolling();
         }
@@ -169,7 +176,8 @@ public class DashboardController {
 
     private void updateSyncStatus() {
         if (SyncManager.getInstance().isCloudAvailable()) {
-            syncStatusLabel.setText("● Online");
+            String lastSync = SyncManager.getInstance().lastSyncTextProperty().get();
+            syncStatusLabel.setText("● Online — " + lastSync);
             syncStatusLabel.setStyle("-fx-text-fill: #10b981; -fx-font-size: 11px;");
         } else {
             syncStatusLabel.setText("● Offline");
